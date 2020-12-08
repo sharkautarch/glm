@@ -103,7 +103,7 @@ namespace glm
 	/// @tparam T A floating-point scalar type
 	/// @tparam Q A value from qualifier enum
 	template<typename T, qualifier Q>
-	GLM_FUNC_DECL qua<T, Q> inverse(qua<T, Q> const& q);
+	GLM_FUNC_DECL GLM_CONSTEXPR qua<T, Q> inverse(qua<T, Q> const& q);
 
 	/// Returns true if x holds a NaN (not a number)
 	/// representation in the underlying implementation's set of

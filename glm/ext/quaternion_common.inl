@@ -116,7 +116,7 @@ namespace glm
 	}
 
 	template<typename T, qualifier Q>
-	GLM_FUNC_QUALIFIER qua<T, Q> inverse(qua<T, Q> const& q)
+	GLM_FUNC_QUALIFIER GLM_CONSTEXPR qua<T, Q> inverse(qua<T, Q> const& q)
 	{
 		return conjugate(q) / dot(q, q);
 	}
