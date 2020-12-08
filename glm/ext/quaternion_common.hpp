@@ -96,7 +96,7 @@ namespace glm
 	/// @tparam T A floating-point scalar type
 	/// @tparam Q A value from qualifier enum
 	template<typename T, qualifier Q>
-	GLM_FUNC_DECL qua<T, Q> conjugate(qua<T, Q> const& q);
+	GLM_FUNC_DECL GLM_CONSTEXPR qua<T, Q> conjugate(qua<T, Q> const& q);
 
 	/// Returns the q inverse.
 	///
