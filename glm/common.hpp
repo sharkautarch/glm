@@ -51,7 +51,7 @@ namespace glm
 	/// @see <a href="http://www.opengl.org/sdk/docs/manglsl/xhtml/sign.xml">GLSL sign man page</a>
 	/// @see <a href="http://www.opengl.org/registry/doc/GLSLangSpec.4.20.8.pdf">GLSL 4.20.8 specification, section 8.3 Common Functions</a>
 	template<length_t L, typename T, qualifier Q>
-	GLM_FUNC_DECL vec<L, T, Q> sign(vec<L, T, Q> const& x);
+	GLM_FUNC_DECL GLM_CONSTEXPR vec<L, T, Q> sign(vec<L, T, Q> const& x);
 
 	/// Returns a value equal to the nearest integer that is less then or equal to x.
 	///
