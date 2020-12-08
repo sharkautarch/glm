@@ -110,7 +110,7 @@ namespace glm
     }
 
 	template<typename T, qualifier Q>
-	GLM_FUNC_QUALIFIER qua<T, Q> conjugate(qua<T, Q> const& q)
+	GLM_FUNC_QUALIFIER GLM_CONSTEXPR qua<T, Q> conjugate(qua<T, Q> const& q)
 	{
 		return qua<T, Q>(q.w, -q.x, -q.y, -q.z);
 	}
