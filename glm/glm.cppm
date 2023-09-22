@@ -2670,6 +2670,6 @@ export namespace glm {
 #if defined(_MSC_VER) // Workaround
 // Partial template specialization doesn't need to be exported explicitly, but this may not work otherwise on MSVC.
 export namespace std {
-    using std::hash; // See GLM_GTX_hash
+	using std::hash; // See GLM_GTX_hash
 }
 #endif
