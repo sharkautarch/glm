@@ -92,7 +92,7 @@ namespace log2_
 
 			std::clock_t Begin = clock();
 
-			for(std::size_t i = 0; i < Count; ++i)
+			for(unsigned long i = 0, n = static_cast<unsigned long>(Count); i < n; ++i)
 			{
 				glm::vec<4, unsigned long, glm::defaultp> Tmp;
 				_BitScanReverse(&Tmp.x, i);
@@ -114,7 +114,7 @@ namespace log2_
 
 			std::clock_t Begin = clock();
 
-			for(std::size_t i = 0; i < Count; ++i)
+			for (unsigned long i = 0, n = static_cast<unsigned long>(Count); i < n; ++i)
 			{
 				_BitScanReverse(&Result[i].x, i);
 				_BitScanReverse(&Result[i].y, i);
@@ -134,7 +134,7 @@ namespace log2_
 
 			std::clock_t Begin = clock();
 
-			for(std::size_t i = 0; i < Count; ++i)
+			for (unsigned long i = 0, n = static_cast<unsigned long>(Count); i < n; ++i)
 			{
 				_BitScanReverse(reinterpret_cast<unsigned long*>(&Result[i].x), i);
 				_BitScanReverse(reinterpret_cast<unsigned long*>(&Result[i].y), i);
