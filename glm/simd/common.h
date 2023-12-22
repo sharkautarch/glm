@@ -79,6 +79,15 @@ GLM_FUNC_QUALIFIER glm_f32vec4 glm_vec4_fma(glm_f32vec4 a, glm_f32vec4 b, glm_f3
 #	endif
 }
 
+GLM_FUNC_QUALIFIER glm_f32vec4 glm_vec4d_fma(glm_f32vec4 a, glm_f32vec4 b, glm_f32vec4 c)
+{
+#	if (GLM_ARCH & GLM_ARCH_AVX2_BIT) && !(GLM_COMPILER & GLM_COMPILER_CLANG)
+	return _mm_fmadd_ps(a, b, c);
+#	else
+	return glm_vec4_add(glm_vec4_mul(a, b), c);
+#	endif
+}
+
 GLM_FUNC_QUALIFIER glm_f32vec4 glm_vec4_abs(glm_f32vec4 x)
 {
 	return _mm_and_ps(x, _mm_castsi128_ps(_mm_set1_epi32(0x7FFFFFFF)));
