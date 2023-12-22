@@ -94,6 +94,8 @@ option(GLM_TEST_ENABLE_SIMD_SSE4_1 "Enable SSE 4.1 optimizations" OFF)
 option(GLM_TEST_ENABLE_SIMD_SSE4_2 "Enable SSE 4.2 optimizations" OFF)
 option(GLM_TEST_ENABLE_SIMD_AVX "Enable AVX optimizations" OFF)
 option(GLM_TEST_ENABLE_SIMD_AVX2 "Enable AVX2 optimizations" OFF)
+option(GLM_TEST_ENABLE_SIMD_NEON "Enable ARM NEON optimizations" OFF)
+option(GLM_TEST_ENABLE_SIMD_FMA "Enable FMA optimizations" OFF)
 option(GLM_TEST_FORCE_PURE "Force 'pure' instructions" OFF)
 
 if(GLM_TEST_FORCE_PURE)
@@ -187,6 +189,16 @@ elseif(GLM_TEST_ENABLE_SIMD_SSE2)
 		add_compile_options(/arch:SSE2)
 	endif()
 	message(STATUS "GLM: SSE2 instruction set")
+elseif(GLM_TEST_ENABLE_SIMD_NEON)
+	add_definitions(-DGLM_FORCE_NEON)
+	message(STATUS "GLM: ARM NEON instruction set")
+endif()
+
+if (GLM_TEST_ENABLE_SIMD_FMA)
+	add_definitions(-DGLM_FORCE_FMA)
+	if((CMAKE_CXX_COMPILER_ID MATCHES "GNU") OR (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+		add_compile_options(-mfma)
+	endif()
 endif()
 
 # Compiler and default options
@@ -196,11 +208,16 @@ if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 		message("GLM: Clang - ${CMAKE_CXX_COMPILER_ID} compiler")
 	endif()
 
+	add_definitions(-D_CRT_SECURE_NO_WARNINGS)
 	if(NOT GLM_DISABLE_AUTO_DETECTION)
 		add_compile_options(-Werror -Weverything)
 	endif()
+	if (NOT APPLE)
+		add_compile_options(-Wno-unsafe-buffer-usage) #this option makes MacOS compilation fail but prevent error on windows
+	endif()
+	
 	add_compile_options(-Wno-c++98-compat -Wno-c++98-compat-pedantic -Wno-c++11-long-long -Wno-padded -Wno-gnu-anonymous-struct -Wno-nested-anon-types)
-	add_compile_options(-Wno-undefined-reinterpret-cast -Wno-sign-conversion -Wno-unused-variable -Wno-missing-prototypes -Wno-unreachable-code -Wno-missing-variable-declarations -Wno-sign-compare -Wno-global-constructors -Wno-unused-macros -Wno-format-nonliteral -Wno-float-equal)
+    add_compile_options(-Wno-undefined-reinterpret-cast -Wno-sign-conversion -Wno-unused-variable -Wno-missing-prototypes -Wno-unreachable-code -Wno-missing-variable-declarations -Wno-sign-compare -Wno-global-constructors -Wno-unused-macros -Wno-format-nonliteral -Wno-float-equal)
 
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
 	if(NOT GLM_QUIET)
