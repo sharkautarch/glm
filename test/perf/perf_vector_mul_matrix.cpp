@@ -18,7 +18,7 @@ template <typename matType, typename vecType>
 static void test_vec_mul_mat(matType const& M, std::vector<vecType> const& I, std::vector<vecType>& O)
 {
 	for (std::size_t i = 0, n = I.size(); i < n; ++i)
-		O[i] = I[i] * M;
+		O[i] = M * I[i];
 }
 
 template <typename matType, typename vecType>
@@ -28,6 +28,8 @@ static int launch_vec_mul_mat(std::vector<vecType>& O, matType const& Transform,
 
 	std::vector<vecType> I(Samples);
 	O.resize(Samples);
+
+	memset(I.data(), 0, I.size() * sizeof(vecType));
 
 	for(std::size_t i = 0; i < Samples; ++i)
 		I[i] = Scale * static_cast<T>(i);
@@ -125,13 +127,13 @@ int main()
 
 	std::printf("vec2 * mat2:\n");
 	Error += comp_vec2_mul_mat2<glm::mat2, glm::vec2, glm::aligned_mat2, glm::aligned_vec2>(Samples);
-	
+
 	std::printf("dvec2 * dmat2:\n");
 	Error += comp_vec2_mul_mat2<glm::dmat2, glm::dvec2,glm::aligned_dmat2, glm::aligned_dvec2>(Samples);
 
 	std::printf("vec3 * mat3:\n");
 	Error += comp_vec3_mul_mat3<glm::mat3, glm::vec3, glm::aligned_mat3, glm::aligned_vec3>(Samples);
-	
+
 	std::printf("dvec3 * dmat3:\n");
 	Error += comp_vec3_mul_mat3<glm::dmat3, glm::dvec3, glm::aligned_dmat3, glm::aligned_dvec3>(Samples);
 

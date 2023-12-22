@@ -284,11 +284,6 @@ namespace glm {
 		return glm::vec<3, T, Q>(v.x, v.y, v.z);
 	}
 
-	template<typename T, qualifier Q>
-	GLM_FUNC_QUALIFIER glm::vec<3, T, Q> xyz(const glm::vec<4, T, Q> &v) {
-		return glm::vec<3, T, Q>(v.x, v.y, v.z);
-	}
-
 	// xyw
 	template<typename T, qualifier Q>
 	GLM_FUNC_QUALIFIER glm::vec<3, T, Q> xyw(const glm::vec<4, T, Q> &v) {
@@ -1042,16 +1037,6 @@ namespace glm {
 		return glm::vec<4, T, Q>(v.x, v.y, v.z, v.y);
 	}
 
-	// xyzz
-	template<typename T, qualifier Q>
-	GLM_FUNC_QUALIFIER glm::vec<4, T, Q> xyzz(const glm::vec<3, T, Q> &v) {
-		return glm::vec<4, T, Q>(v.x, v.y, v.z, v.z);
-	}
-
-	template<typename T, qualifier Q>
-	GLM_FUNC_QUALIFIER glm::vec<4, T, Q> xyzz(const glm::vec<4, T, Q> &v) {
-		return glm::vec<4, T, Q>(v.x, v.y, v.z, v.z);
-	}
 
 	// xyzw
 	template<typename T, qualifier Q>
