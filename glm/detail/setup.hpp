@@ -529,6 +529,15 @@
 #endif
 
 ///////////////////////////////////////////////////////////////////////////////////
+// Allows using any scalar types as float.
+
+#ifdef GLM_FORCE_UNRESTRICTED_SCALAR_TYPES
+#	define GLM_CONFIG_UNRESTRICTED_SCALAR_TYPES GLM_ENABLE
+#else
+#	define GLM_CONFIG_UNRESTRICTED_SCALAR_TYPES GLM_DISABLE
+#endif
+
+///////////////////////////////////////////////////////////////////////////////////
 // Clip control, define GLM_FORCE_DEPTH_ZERO_TO_ONE before including GLM
 // to use a clip space between 0 to 1.
 // Coordinate system, define GLM_FORCE_LEFT_HANDED before including GLM
