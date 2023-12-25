@@ -115,7 +115,7 @@
 #		define GLM_LANG_PLATFORM 0
 #	endif
 
-#	if __cplusplus > 201703L || GLM_LANG_PLATFORM > 201703L
+#	if __cplusplus >= 202002L || GLM_LANG_PLATFORM >= 202002L
 #		define GLM_LANG (GLM_LANG_CXX20 | GLM_LANG_EXT)
 #	elif __cplusplus == 201703L || GLM_LANG_PLATFORM == 201703L
 #		define GLM_LANG (GLM_LANG_CXX17 | GLM_LANG_EXT)
