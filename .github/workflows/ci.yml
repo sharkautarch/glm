@@ -71,8 +71,10 @@ jobs:
         config: [Debug, Release]
         include:
           - std: 11
+            arch: x64
             toolset: 14.2
           - std: 17
+            arch: x64
             toolset: 14.2
     steps:
       - run: echo "🎉 The job was automatically triggered by a ${{ github.event_name }} event."
