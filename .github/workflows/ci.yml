@@ -3,8 +3,8 @@ run-name: ${{ github.actor }} is testing out GitHub Actions 🚀
 
 on: 
   push:
-  pull_request:
-    types: [opened]
+  pull_request_target:
+    types: [opened, edited, reopened]
 
 jobs:
   windows-latest:
@@ -12,6 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        toolset: [14.3, 15.9, 16.8]
         std: [98, 11, 14, 17, 20]
         config: [Debug, Release]
 
@@ -27,6 +28,9 @@ jobs:
         run: |
           ls ${{ github.workspace }}
       - run: echo "🍏 This job's status is ${{ job.status }}."
+      - uses: TheMrMilchmann/setup-msvc-dev@v3
+        with:
+          toolset: ${{matrix.toolset}}
       - name: CMake Version
         run: cmake --version
       - run: cmake -S. -B ./build_auto
