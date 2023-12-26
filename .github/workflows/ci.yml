@@ -8,14 +8,13 @@ on:
 
 jobs:
   platforms:
+    runs-on: [ubuntu-latest, ubuntu-20.04, macos-latest, macos-11, windows-latest, windows-2019]
+
     strategy:
       fail-fast: false
       matrix:
         std: [98, 11, 14, 17, 20]
         config: [Debug, Release]
-        platform: [ubuntu-latest, ubuntu-20.04, macos-latest, macos-11, windows-latest, windows-2019]
-
-    runs-on: ${{matrix.platform}}
 
     steps:
       - name: Github Actions init
