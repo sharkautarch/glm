@@ -57,12 +57,11 @@ jobs:
         run: cmake --build ./build_avx1_ext --config ${{matrix.config}}
         run: ctest --verbose -C ${{matrix.config}} --test-dir ./build_avx1_std
         run: ctest --verbose -C ${{matrix.config}} --test-dir ./build_avx1_ext
-      - if: "contains(${{matrix.platform}}, 'ubuntu') || contains(${{matrix.platform}}, 'windows')"
-          name: Build and Test GLM_TEST_ENABLE_SIMD_AVX
-            run: cmake -S. -B ./build_avx2_std -DGLM_TEST_ENABLE_SIMD_AVX2=ON -DGLM_TEST_ENABLE_CXX_${{matrix.std}}=ON
-            run: cmake -S. -B ./build_avx2_ext -DGLM_TEST_ENABLE_SIMD_AVX2=ON -DGLM_TEST_ENABLE_CXX_${{matrix.std}}=ON -DGLM_TEST_ENABLE_LANG_EXTENSIONS=ON
-            run: cmake --build ./build_avx2_std --config ${{matrix.config}}
-            run: cmake --build ./build_avx2_ext --config ${{matrix.config}}
-            run: ctest --verbose -C ${{matrix.config}} --test-dir ./build_avx2_std
-            run: ctest --verbose -C ${{matrix.config}} --test-dir ./build_avx2_ext
+      - name: Build and Test GLM_TEST_ENABLE_SIMD_AVX2
+        run: cmake -S. -B ./build_avx2_std -DGLM_TEST_ENABLE_SIMD_AVX2=ON -DGLM_TEST_ENABLE_CXX_${{matrix.std}}=ON
+        run: cmake -S. -B ./build_avx2_ext -DGLM_TEST_ENABLE_SIMD_AVX2=ON -DGLM_TEST_ENABLE_CXX_${{matrix.std}}=ON -DGLM_TEST_ENABLE_LANG_EXTENSIONS=ON
+        run: cmake --build ./build_avx2_std --config ${{matrix.config}}
+        run: cmake --build ./build_avx2_ext --config ${{matrix.config}}
+        run: ctest --verbose -C ${{matrix.config}} --test-dir ./build_avx2_std
+        run: ctest --verbose -C ${{matrix.config}} --test-dir ./build_avx2_ext
 
