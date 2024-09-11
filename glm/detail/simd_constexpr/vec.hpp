@@ -189,17 +189,18 @@ namespace glm
 		
 		// -- Data --
 #define GLM_N [[no_unique_address]]
+#define GLM_MA __attribute__((__may_alias__))
 		template <length_t I>
 		using E = detail::Element<detail::NotEmpty(I,L),T,I,L>;
 		union
 		{
-				struct {
+				GLM_MA struct {
 					union       {          T x,            r,            s; };
-					GLM_N union { GLM_N E<2> y; GLM_N E<2> g; GLM_N E<2> t; };
-					GLM_N union { GLM_N E<3> z; GLM_N E<3> b; GLM_N E<3> p; };
-					GLM_N union { GLM_N E<4> w; GLM_N E<4> a; GLM_N E<4> q; };
+					union { GLM_N E<2> y GLM_MA; GLM_N E<2> g; GLM_N E<2> t; };
+					union { GLM_N E<3> z GLM_MA; GLM_N E<3> b; GLM_N E<3> p; };
+					union { GLM_N E<4> w GLM_MA; GLM_N E<4> a; GLM_N E<4> q; };
 				};
-				data_t data;
+				GLM_MA data_t data;
 		};
 #undef GLM_N
 #				if GLM_CONFIG_SWIZZLE == GLM_SWIZZLE_OPERATOR

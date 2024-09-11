@@ -3,8 +3,10 @@
 namespace glm::detail
 {
 	consteval bool NotEmpty(length_t I, length_t L) { return I <= L; }
-	template <bool IsEmpty, typename T, length_t I, length_t L>
-	struct Element
+	template <bool IsNotEmpty, typename T, length_t I, length_t L>
+	struct Element;
+	template <typename T, length_t I, length_t L> requires (!NotEmpty(I, L))
+	struct Element<false, T, I, L>
 	{
 		constexpr operator auto() {
       return 0;
