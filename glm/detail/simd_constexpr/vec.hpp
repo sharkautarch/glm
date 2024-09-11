@@ -116,7 +116,31 @@ namespace glm
 			value = detail::is_aligned<Q>::value
 		};
 
-		static constexpr length_t length(){return L;}
+		// -- Component Access --
+		static constexpr length_t length(){	return L;	}
+		
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR decltype(auto) operator[](length_t i)
+		{
+			if (std::is_constant_evaluated()) {
+				static_assert(i <= length());
+			} else {
+				GLM_ASSERT_LENGTH(i, this->length());
+			}
+			switch (i)
+			{
+				default:
+				case 0:
+					return x;
+				case 1:
+					return y;
+				case 2:
+					return z;
+				case 3:
+					return w;
+			}
+		}
+		
+		
 		// -- Data --
 #define GLM_N [[no_unique_address]]
 		template <length_t I>
@@ -261,5 +285,554 @@ namespace glm
 					return std::bit_cast<data_t>(a);
 				}()
 			} {}
+			
+		// -- Unary arithmetic operators --
+		template <length_t Lx, typename Tx, qualifier Qx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator=(vec<Lx, Tx, Qx> v)
+		{
+			*this = vec<L, T, Q>(v);
+			return *this;
+		}
+		
+		
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q>& operator+=(arithmetic auto scalar)
+		{
+			return (*this = detail::compute_vec_add<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator+=(vec<1, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_add<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator+=(vec<L, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_add<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L T, Q>(v)));
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator-=(arithmetic auto scalar)
+		{
+			return (*this = detail::compute_vec_sub<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator-=(vec<1, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_sub<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator-=(vec<L, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_sub<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator*=(arithmetic auto scalar)
+		{
+			return (*this = detail::compute_vec_mul<L,T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator*=(vec<1, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_mul<L,T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator*=(vec<L, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_mul<L,T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator/=(arithmetic auto scalar)
+		{
+			return (*this = detail::compute_vec_div<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator/=(vec<1, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_div<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator/=(vec<L, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_div<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+		
+		// -- Increment and decrement operators --
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator++()
+		{
+			++this->x;
+			++this->y;
+			++this->z;
+			++this->w;
+			return *this;
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator--()
+		{
+			--this->x;
+			--this->y;
+			--this->z;
+			--this->w;
+			return *this;
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator++(int)
+		{
+			vec<L, T, Q> Result(*this);
+			++*this;
+			return Result;
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator--(int)
+		{
+			vec<L, T, Q> Result(*this);
+			--*this;
+			return Result;
+		}
+
+		// -- Unary bit operators --
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator%=(arithmetic auto scalar)
+		{
+			return (*this = detail::compute_vec_mod<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator%=(vec<1, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_mod<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator%=(vec<L, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_mod<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator&=(arithmetic auto scalar)
+		{
+			return (*this = detail::compute_vec_and<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator&=(vec<1, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_and<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator&=(vec<L, Tx, Q> v)
+		{
+			return (*this = detail::compute_vec_and<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator|=(arithmetic auto scalar)
+		{
+			return (*this = detail::compute_vec_or<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator|=(vec<1, Tx, Q> const& v)
+		{
+			return (*this = detail::compute_vec_or<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator|=(vec<L, Tx, Q> const& v)
+		{
+			return (*this = detail::compute_vec_or<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator^=(arithmetic auto scalar)
+		{
+			return (*this = detail::compute_vec_xor<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator^=(vec<1, Tx, Q> const& v)
+		{
+			return (*this = detail::compute_vec_xor<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator^=(vec<L, Tx, Q> const& v)
+		{
+			return (*this = detail::compute_vec_xor<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator<<=(arithmetic auto scalar)
+		{
+			return (*this = detail::compute_vec_shift_left<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator<<=(vec<1, Tx, Q> const& v)
+		{
+			return (*this = detail::compute_vec_shift_left<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator<<=(vec<L, Tx, Q> const& v)
+		{
+			return (*this = detail::compute_vec_shift_left<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator>>=(arithmetic auto scalar)
+		{
+			return (*this = detail::compute_vec_shift_right<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator>>=(vec<1, Tx, Q> const& v)
+		{
+			return (*this = detail::compute_vec_shift_right<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		template<typename Tx>
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> & operator>>=(vec<L, Tx, Q> const& v)
+		{
+			return (*this = detail::compute_vec_shift_right<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+		}
+
+		// -- Unary constant operators --
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator+()
+		{
+			return *this;
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator-()
+		{
+			return vec<L, T, Q>(0) -= *this;
+		}
+
+		// -- Binary arithmetic operators --
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator+(T scalar)
+		{
+			return vec<L, T, Q>(*this) += scalar;
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator+(vec<1, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(*this) += v2;
+		}
+
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator+(T scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(v) += scalar;
+		}
+
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator+(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v2) += v1;
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator+(vec<L, T, Q> v2)
+		{
+			return vec<L, T, Q>(*this) += v2;
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator-(T scalar)
+		{
+			return vec<L, T, Q>(*this) -= scalar;
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator-(vec<1, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(*this) -= v2;
+		}
+
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator-(T scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(scalar) -= v;
+		}
+
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator-(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1.x) -= v2;
+		}
+
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator-(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) -= v2;
+		}
+
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator*(T scalar)
+		{
+			return vec<L, T, Q>(*this) *= scalar;
+		}
+
+		
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator*(vec<1, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(*this) *= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator*(T scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(v) *= scalar;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator*(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v2) *= v1;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator*(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) *= v2;
+		}
+
+		
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator/(T scalar)
+		{
+			return vec<L, T, Q>(*this) /= scalar;
+		}
+
+		
+		GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator/(vec<1, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(*this) /= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator/(T scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(scalar) /= v;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator/(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1.x) /= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator/(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) /= v2;
+		}
+
+		// -- Binary bit operators --
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator%(vec<L, T, Q> const& v, T scalar)
+		{
+			return vec<L, T, Q>(v) %= scalar;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator%(vec<L, T, Q> const& v1, vec<1, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) %= v2.x;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator%(T scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(scalar) %= v;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator%(vec<1, T, Q> const& scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(scalar.x) %= v;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator%(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) %= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator&(vec<L, T, Q> const& v, T scalar)
+		{
+			return vec<L, T, Q>(v) &= scalar;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator&(vec<L, T, Q> const& v, vec<1, T, Q> const& scalar)
+		{
+			return vec<L, T, Q>(v) &= scalar;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator&(T scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(scalar) &= v;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator&(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1.x) &= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator&(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) &= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator|(vec<L, T, Q> const& v, T scalar)
+		{
+			return vec<L, T, Q>(v) |= scalar;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator|(vec<L, T, Q> const& v1, vec<1, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) |= v2.x;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator|(T scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(scalar) |= v;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator|(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1.x) |= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator|(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) |= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator^(vec<L, T, Q> const& v, T scalar)
+		{
+			return vec<L, T, Q>(v) ^= scalar;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator^(vec<L, T, Q> const& v1, vec<1, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) ^= v2.x;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator^(T scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(scalar) ^= v;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator^(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1.x) ^= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator^(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) ^= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<L, T, Q> const& v, T scalar)
+		{
+			return vec<L, T, Q>(v) <<= scalar;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<L, T, Q> const& v1, vec<1, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) <<= v2.x;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator<<(T scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(scalar) <<= v;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1.x) <<= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) <<= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<L, T, Q> const& v, T scalar)
+		{
+			return vec<L, T, Q>(v) >>= scalar;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<L, T, Q> const& v1, vec<1, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) >>= v2.x;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator>>(T scalar, vec<L, T, Q> const& v)
+		{
+			return vec<L, T, Q>(scalar) >>= v;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1.x) >>= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return vec<L, T, Q>(v1) >>= v2;
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, T, Q> operator~(vec<L, T, Q> const& v)
+		{
+			return detail::compute_vec_bitwise_not<4, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v);
+		}
+
+		// -- Boolean operators --
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool operator==(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return detail::compute_vec_equal<4, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
+		}
+
+		
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR bool operator!=(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		{
+			return detail::compute_vec_nequal<4, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
+		}
+
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, bool, Q> operator&&(vec<L, bool, Q> const& v1, vec<L, bool, Q> const& v2)
+		{
+			return vec<L, bool, Q>(v1.x && v2.x, v1.y && v2.y, v1.z && v2.z, v1.w && v2.w);
+		}
+
+		friend GLM_FUNC_QUALIFIER GLM_CONSTEXPR vec<L, bool, Q> operator||(vec<L, bool, Q> const& v1, vec<L, bool, Q> const& v2)
+		{
+			return vec<L, bool, Q>(v1.x || v2.x, v1.y || v2.y, v1.z || v2.z, v1.w || v2.w);
+		}
 	};
 }
