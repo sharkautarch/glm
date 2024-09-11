@@ -293,9 +293,12 @@ namespace glm
 		
 		constexpr vec() : data{} {}
 		constexpr vec(arithmetic auto scalar) : data{ [scalar,this](){ auto s = [scalar](){ return scalar; }; return ctor_scalar(s); }() } {}
+
+		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx == 1 && L != 1)
+	  constexpr vec(vec<Lx, Tx, Qx> v) : data{ [d=std::bit_cast<VecDataArray<Lx, Tx, Qx>>(v.data),this](){ auto s = [scalar=d.p[0]](){ return scalar; }; return ctor_scalar(s); }() } {}
 		
-		template <length_t Lx, typename Tx, qualifier Qx>
-		constexpr vec(vec<Lx, Tx, Qx> v) : data{ [v, this](){ auto vv = [v](){ return v; }; return ctor(vv); }() } {} 
+		template <length_t Lx, typename Tx, qualifier Qx> requires (L == 1 || Lx != 1)
+		constexpr vec(vec<Lx, Tx, Qx> v) : data{ [v, this](){ auto vv = [v](){ return v; }; return ctor(vv); }() } {}
 		
 		template <arithmetic... Scalar> requires (sizeof...(Scalar) == L)
 		constexpr vec(Scalar... scalar)
