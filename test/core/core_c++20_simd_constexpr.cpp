@@ -32,6 +32,6 @@ int main()
         avec4 vfin = glm::max(v1, v2) + v3;
 	static_assert(sizeof(vfin)>0);
         printf("vfin = %f %f %f %f\n", vfin[0], vfin[1], vfin[2], vfin[3]);
-				printf("v3 = %f %f %f %f\n", v3.x, v3.y, v3.z, v3.w);
+				printf("v3 = %f %f %f %f\n", v3[0], v3[1], v3[2], v3[3]);
 	return 0;
 }
