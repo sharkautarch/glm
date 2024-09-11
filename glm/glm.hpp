@@ -105,6 +105,10 @@
 #define GLM_SIMD_CONSTEXPR 0
 #endif
 
+#if GLM_SIMD_CONSTEXPR == 1
+# define GLM_FORCE_INTRINSICS 1
+#endif
+
 #include "detail/_fixes.hpp"
 
 #include "detail/setup.hpp"

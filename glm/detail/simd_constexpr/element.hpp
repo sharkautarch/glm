@@ -39,49 +39,49 @@ namespace glm::detail
 	  {
 			return *this;
 	  }
-	  constexpr decltype(auto) operator+=(auto a) requires requires (T first, decltype(rhs) r) { first + r; }
+	  constexpr decltype(auto) operator+=(auto rhs) requires requires (T first, decltype(rhs) r) { first + r; }
 	  {
 	  	return *this;
 	  }
-	  constexpr decltype(auto) operator-=(auto a) requires requires (T first, decltype(rhs) r) { first - r; }
+	  constexpr decltype(auto) operator-=(auto rhs) requires requires (T first, decltype(rhs) r) { first - r; }
 	  {
 	  	return *this;
 	  }
-	  constexpr decltype(auto) operator*=(auto a) requires requires (T first, decltype(rhs) r) { first * r; }
-	  {
-	  	return *this;
-	  }
-	  
-	  constexpr decltype(auto) operator/=(auto a) requires requires (T first, decltype(rhs) r) { first / r; }
+	  constexpr decltype(auto) operator*=(auto rhs) requires requires (T first, decltype(rhs) r) { first * r; }
 	  {
 	  	return *this;
 	  }
 	  
-	  constexpr decltype(auto) operator%=(auto a) requires requires (T first, decltype(rhs) r) { first % r; }
+	  constexpr decltype(auto) operator/=(auto rhs) requires requires (T first, decltype(rhs) r) { first / r; }
 	  {
 	  	return *this;
 	  }
 	  
-	  constexpr decltype(auto) operator&=(auto a) requires requires (T first, decltype(rhs) r) { first & r; }
+	  constexpr decltype(auto) operator%=(auto rhs) requires requires (T first, decltype(rhs) r) { first % r; }
 	  {
 	  	return *this;
 	  }
 	  
-	  constexpr decltype(auto) operator|=(auto a) requires requires (T first, decltype(rhs) r) { first | r; }
+	  constexpr decltype(auto) operator&=(auto rhs) requires requires (T first, decltype(rhs) r) { first & r; }
 	  {
 	  	return *this;
 	  }
 	  
-	  constexpr decltype(auto) operator^=(auto a) requires requires (T first, decltype(rhs) r) { first ^ r; }
+	  constexpr decltype(auto) operator|=(auto rhs) requires requires (T first, decltype(rhs) r) { first | r; }
 	  {
 	  	return *this;
 	  }
 	  
-	  constexpr decltype(auto) operator<<=(auto a) requires requires (T first, decltype(rhs) r) { first << r; }
+	  constexpr decltype(auto) operator^=(auto rhs) requires requires (T first, decltype(rhs) r) { first ^ r; }
 	  {
 	  	return *this;
 	  }
-	  constexpr decltype(auto) operator>>=(auto a) requires requires (T first, decltype(rhs) r) { first >> r; }
+	  
+	  constexpr decltype(auto) operator<<=(auto rhs) requires requires (T first, decltype(rhs) r) { first << r; }
+	  {
+	  	return *this;
+	  }
+	  constexpr decltype(auto) operator>>=(auto rhs) requires requires (T first, decltype(rhs) r) { first >> r; }
 	  {
 	  	return *this;
 	  }
@@ -141,12 +141,12 @@ namespace glm::detail
 	  	return false;
 	  }
 	  
-	  constexpr decltype(auto) operator!(auto rhs) requires requires (T first) { !first; }
+	  constexpr decltype(auto) operator!() requires requires (T first) { !first; }
 	  {
 	  	return false;
 	  }
 	  
-	  constexpr decltype(auto) operator bool() requires requires (T first) { !!first; }
+	  constexpr operator bool() requires requires (T first) { !!first; }
 	  {
 	  	return false;
 	  }
@@ -161,7 +161,7 @@ namespace glm::detail
 	  	return 0;
 	  }
 	  
-	  constexpr decltype(auto) operator&(); requires requires (T first) { &first; }
+	  constexpr decltype(auto) operator&() requires requires (T first) { &first; }
 	  {
 	  	return nullptr;
 	  }
@@ -178,6 +178,11 @@ namespace glm::detail
 	{
 		T t;
 		constexpr operator auto() 
+		{
+      return t;
+  	}
+  	
+  	constexpr operator auto() const
 		{
       return t;
   	}
@@ -219,60 +224,60 @@ namespace glm::detail
 	      operator--();  // prefix decrement
 	      return old;    // return old value
 	  }
-	  constexpr decltype(auto) operator+=(auto a) requires requires (T first, decltype(rhs) r) { first + r; }
+	  constexpr decltype(auto) operator+=(auto rhs) requires requires (T first, decltype(rhs) r) { first + r; }
 	  {
-	  	t+=a;
+	  	t+=rhs;
 	  	return *this;
 	  }
-	  constexpr decltype(auto) operator-=(auto a) requires requires (T first, decltype(rhs) r) { first - r; }
+	  constexpr decltype(auto) operator-=(auto rhs) requires requires (T first, decltype(rhs) r) { first - r; }
 	  {
-	  	t-=a;
+	  	t-=rhs;
 	  	return *this;
 	  }
-	  constexpr decltype(auto) operator*=(auto a) requires requires (T first, decltype(rhs) r) { first * r; }
+	  constexpr decltype(auto) operator*=(auto rhs) requires requires (T first, decltype(rhs) r) { first * r; }
 	  {
-	  	t*=a;
-	  	return *this;
-	  }
-	  
-	  constexpr decltype(auto) operator/=(auto a) requires requires (T first, decltype(rhs) r) { first / r; }
-	  {
-	  	t/=a;
+	  	t*=rhs;
 	  	return *this;
 	  }
 	  
-	  constexpr decltype(auto) operator%=(auto a) requires requires (T first, decltype(rhs) r) { first % r; }
+	  constexpr decltype(auto) operator/=(auto rhs) requires requires (T first, decltype(rhs) r) { first / r; }
 	  {
-	  	t%=a;
+	  	t/=rhs;
 	  	return *this;
 	  }
 	  
-	  constexpr decltype(auto) operator&=(auto a) requires requires (T first, decltype(rhs) r) { first & r; }
+	  constexpr decltype(auto) operator%=(auto rhs) requires requires (T first, decltype(rhs) r) { first % r; }
 	  {
-	  	t&=a;
+	  	t%=rhs;
 	  	return *this;
 	  }
 	  
-	  constexpr decltype(auto) operator|=(auto a) requires requires (T first, decltype(rhs) r) { first | r; }
+	  constexpr decltype(auto) operator&=(auto rhs) requires requires (T first, decltype(rhs) r) { first & r; }
 	  {
-	  	t|=a;
+	  	t&=rhs;
 	  	return *this;
 	  }
 	  
-	  constexpr decltype(auto) operator^=(auto a) requires requires (T first, decltype(rhs) r) { first ^ r; }
+	  constexpr decltype(auto) operator|=(auto rhs) requires requires (T first, decltype(rhs) r) { first | r; }
 	  {
-	  	t^=a;
+	  	t|=rhs;
 	  	return *this;
 	  }
 	  
-	  constexpr decltype(auto) operator<<=(auto a) requires requires (T first, decltype(rhs) r) { first << r; }
+	  constexpr decltype(auto) operator^=(auto rhs) requires requires (T first, decltype(rhs) r) { first ^ r; }
 	  {
-	  	t<<=a;
+	  	t^=rhs;
 	  	return *this;
 	  }
-	  constexpr decltype(auto) operator>>=(auto a) requires requires (T first, decltype(rhs) r) { first >> r; }
+	  
+	  constexpr decltype(auto) operator<<=(auto rhs) requires requires (T first, decltype(rhs) r) { first << r; }
 	  {
-	  	t>>=a;
+	  	t<<=rhs;
+	  	return *this;
+	  }
+	  constexpr decltype(auto) operator>>=(auto rhs) requires requires (T first, decltype(rhs) r) { first >> r; }
+	  {
+	  	t>>=rhs;
 	  	return *this;
 	  }
 	  
@@ -363,7 +368,7 @@ namespace glm::detail
 	  	return !lhs.t;
 	  }
 	  
-	  constexpr decltype(auto) operator bool() requires requires (T first) { !!first; }
+	  constexpr operator bool() requires requires (T first) { !!first; }
 	  {
 	  	auto lhs = *this;
 	  	return !!lhs.t;
@@ -381,9 +386,9 @@ namespace glm::detail
 	  	return -lhs.t;
 	  }
 	  
-	  constexpr decltype(auto) operator&(); requires requires (T first) { &first; }
+	  constexpr decltype(auto) operator&() requires requires (T first) { &first; }
 	  {
-	  	return &(this->t);
+	  	return &(t);
 	  }
 	  
 	  constexpr decltype(auto) operator<=>(auto rhs) requires requires (T first, decltype(rhs) r) { first <=> r; }

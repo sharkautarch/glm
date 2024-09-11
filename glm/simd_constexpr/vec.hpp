@@ -24,4 +24,4 @@ namespace glm
 	typedef vec<3, bool, defaultp>		bvec3;
 	typedef vec<4, bool, defaultp>		bvec4;
 }
-#include "../detail/simd_constexpr/type_vec.hpp"
+#include "../detail/simd_constexpr/vec.hpp"

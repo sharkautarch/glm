@@ -1,6 +1,6 @@
 /// @ref core
 /// @file glm/detail/type_vec3.hpp
-
+#if GLM_SIMD_CONSTEXPR == 0
 #pragma once
 
 #include "qualifier.hpp"
@@ -445,3 +445,5 @@ namespace glm
 #ifndef GLM_EXTERNAL_TEMPLATE
 #include "type_vec3.inl"
 #endif//GLM_EXTERNAL_TEMPLATE
+
+#endif
