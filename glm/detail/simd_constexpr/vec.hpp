@@ -3,16 +3,6 @@
 
 #pragma once
 
-#ifdef GLM_CONFIG_ALIGNED_GENTYPES
-# undef GLM_CONFIG_ALIGNED_GENTYPES
-#endif
-#ifdef GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-# undef GLM_FORCE_DEFAULT_ALIGNED_GENTYPES
-#endif
-
-#define GLM_FORCE_DEFAULT_ALIGNED_GENTYPES 1
-#define GLM_CONFIG_ALIGNED_GENTYPES 1
-
 #include "../qualifier.hpp"
 #if GLM_CONFIG_SWIZZLE == GLM_SWIZZLE_OPERATOR
 #	include "../_swizzle.hpp"
@@ -24,6 +14,15 @@
 #include <variant>
 namespace glm
 {
+	template <qualifier Q>
+	consteval bool BIsAlignedQ() {
+		return Q == aligned_highp || Q == aligned_mediump || Q == aligned_lowp;
+	}
+	
+	template <qualifier Q, qualifier Qx>
+	consteval bool BRequiresPackOrUnpack() {
+		return BIsAlignedQ<Q> ^ BIsAlignedQ<Qx>;
+	}
 	template <typename T>
 	concept arithmetic = std::integral<T> || std::floating_point<T>;
 	template <typename T0, typename... T>
@@ -44,7 +43,7 @@ namespace glm
 		using _data_t = typename detail::storage<L, T, detail::is_aligned<Q>::value>::type;
 		
 		template <length_t L, typename T, qualifier Q>
-		using GccV = T __attribute__((vector_size(sizeof(T)*L)));
+		using GccV = T __attribute__(( vector_size(sizeof(T)*L), aligned(alignof(_data_t<L, T, Q>)) ));
 		
 		template <length_t L, typename T, qualifier Q>
 		consteval bool BDataNeedsPadding() {
@@ -99,7 +98,7 @@ namespace glm
 #include "simd_helpers.inl"
 namespace glm
 {
-	template<length_t L, typename T, qualifier Q> requires (Q != packed_highp && Q != packed_mediump && Q != packed_lowp && Q != packed)
+	template<length_t L, typename T, qualifier Q>
 	struct vec
 	{
 		using SimdHlp = detail::SimdHelpers<L, T, Q>;
@@ -110,6 +109,7 @@ namespace glm
 		typedef T value_type;
 		typedef vec<L, T, Q> type;
 		typedef vec<L, bool, Q> bool_type;
+		static constexpr qualifier k_qual = Q;
 		
 		enum is_aligned
 		{
@@ -183,7 +183,7 @@ namespace glm
 				DataArray a = {};
 				constexpr auto v = vecGetter();
 				constexpr length_t vL = v.length();
-				using ArrX = VecDataArray<vL, decltype(v)::value_type, Q>;
+				using ArrX = VecDataArray<vL, decltype(v)::value_type, decltype(v)::k_qual>;
 				ArrX ax = std::bit_cast<ArrX>(v.data);
 				for (length_t i = 0; i < v.length(); i++) {
 					a.p[i] = (T)ax.p[i];
@@ -210,7 +210,7 @@ namespace glm
 				i++;
 			} else {
 				using Tx = VTX::value_type;
-				using ArrX = VecDataArray<_vs0.length(), Tx, Q>;
+				using ArrX = VecDataArray<_vs0.length(), Tx, VTX::k_qual>;
 				ArrX ax = std::bit_cast<ArrX>(_vs0.data);
 				for (Tx tx : ax.p) {
 					a.p[index+i++] = (T)tx;
