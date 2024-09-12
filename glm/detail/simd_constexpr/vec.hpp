@@ -12,6 +12,7 @@
 #include <cstddef>
 #include <array>
 #include <variant>
+#include <cstring>
 namespace glm
 {
 	template <qualifier Q>
@@ -37,35 +38,36 @@ namespace glm
 	namespace detail
 	{
 		template <length_t L, typename T, qualifier Q>
-		using ArrT = T[L];
+		using _ArrT = T[L];
 
 		template <length_t L, typename T, qualifier Q>
 		using _data_t = typename detail::storage<L, T, detail::is_aligned<Q>::value>::type;
 		
 		template <length_t L, typename T, qualifier Q>
-		using GccV = T __attribute__(( vector_size(sizeof(T)*L), aligned(alignof(_data_t<L, T, Q>)) ));
-		
+		struct GccVExt {
+			typedef T GccV __attribute__(( vector_size(sizeof(T)*L), aligned(alignof(_data_t<L, T, Q>)) ));
+		};
 		template <length_t L, typename T, qualifier Q>
 		consteval bool BDataNeedsPadding() {
-			return sizeof(_data_t<L,T,Q>) > sizeof(ArrT<L,T,Q>);
+			return sizeof(_data_t<L,T,Q>) > sizeof(_ArrT<L,T,Q>);
 		}
 		template <length_t L, typename T, qualifier Q>
 		consteval bool BVecNeedsPadding() {
-			return sizeof(_data_t<L,T,Q>) > sizeof(GccV<L,T,Q>);
+			return sizeof(_data_t<L,T,Q>) > sizeof(typename GccVExt<L,T,Q>::GccV);
 		}
 		template <length_t L, typename T, qualifier Q, bool NeedsPadding>
 		struct VecDataArray;
 			
 		template <length_t L, typename T, qualifier Q>
 		struct VecDataArray<L, T, Q, true> {
-			using ArrT = ArrT<L, T, Q>;
+			using ArrT = _ArrT<L, T, Q>;
 			using data_t = _data_t<L,T,Q>;
 			ArrT p;
 			std::byte padding[sizeof(data_t) - sizeof(ArrT)];
 		};
 		template <length_t L, typename T, qualifier Q>
 		struct VecDataArray<L, T, Q, false> {
-			using ArrT = ArrT<L, T, Q>;
+			using ArrT = _ArrT<L, T, Q>;
 			ArrT p;
 		};
 		
@@ -74,7 +76,7 @@ namespace glm
 		
 		template <length_t L, typename T, qualifier Q>
 		struct PaddedGccVec<L, T, Q, true> {
-			using GccV = GccV<L, T,Q>;
+			using GccV = typename GccVExt<L, T,Q>::GccV;
 			using data_t = _data_t<L, T, Q>;
 			GccV gcc_vec;
 			std::byte padding[sizeof(data_t) - sizeof(GccV)];
@@ -82,7 +84,7 @@ namespace glm
 	
 		template <length_t L, typename T, qualifier Q>
 		struct PaddedGccVec<L, T, Q, false> {
-			using GccV = GccV<L, T,Q>;
+			using GccV = typename GccVExt<L, T,Q>::GccV;
 			GccV gcc_vec;
 		};
 	}

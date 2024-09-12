@@ -12,10 +12,21 @@ namespace glm::detail
 		using PaddedVec = PaddedGccVec<Lx, Tx, Qx, detail::BVecNeedsPadding<Lx, Tx, Qx>()>;
 		using gcc_vec_t = PaddedVec<L, T, Q>::GccV;
 		using data_t = typename detail::storage<L, T, detail::is_aligned<Q>::value>::type;
+		
+		static inline auto gcc_vec_to_data(PaddedVec<L, T, Q> v) {
+			if constexpr (L == 3 && !BIsAlignedQ<Q>()) {
+				data_t d;
+				std::memcpy(&d, &v, sizeof(d));
+				return d;
+			} else {
+				return std::bit_cast<data_t>(v);
+			}
+		}
+		
 		static inline auto simd_ctor_scalar(arithmetic auto scalar) {
 			PaddedVec<L, T, Q> v = {};
 			v.gcc_vec = v.gcc_vec + ( (T)scalar );
-			return std::bit_cast<data_t>(v);
+			return gcc_vec_to_data(v);
 		}
 		
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx == L)
@@ -24,7 +35,7 @@ namespace glm::detail
 			using OtherPaddedVec = PaddedVec<Lx, Tx, Qx>;
 			OtherPaddedVec o = std::bit_cast<OtherPaddedVec>(v.data);
 			PaddedVec<L, T, Q> converted = {.gcc_vec=__builtin_convertvector(o.gcc_vec, gcc_vec_t)};
-			return std::bit_cast<data_t>(converted);
+			return gcc_vec_to_data(converted);
 		}
 		
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != L && Lx < L)
@@ -39,7 +50,7 @@ namespace glm::detail
 			}
 			
 			PaddedVec<L, T, Q> converted = {.gcc_vec=__builtin_convertvector(oExpanded.gcc_vec, gcc_vec_t)};
-			return std::bit_cast<data_t>(converted);
+			return gcc_vec_to_data(converted);
 		}
 		
 		template<arithmetic... A>
@@ -54,7 +65,7 @@ namespace glm::detail
 			using OtherPaddedVec = PaddedVec<L, typename GetFirstType<A...>::FirstTx, Q>;
 			OtherPaddedVec o = {.gcc_vec={scalars...}};
 			PaddedVec<L, T, Q> converted = {.gcc_vec=__builtin_convertvector(o.gcc_vec, gcc_vec_t)};
-			return std::bit_cast<data_t>(converted);
+			return gcc_vec_to_data(converted);
 		}
 	};
 }
