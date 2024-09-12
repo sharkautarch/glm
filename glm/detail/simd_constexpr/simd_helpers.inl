@@ -62,8 +62,9 @@ namespace glm::detail
 		static inline auto simd_ctor_multi_scalars(A... scalars) requires ( isLengthOfVector<A...>() && SameArithmeticTypes<A...>())
 		{
 			//assuming that number of scalars is always the same as the length of the to-be-constructed vector
-			using OtherPaddedVec = PaddedVec<L, typename GetFirstType<A...>::FirstTx, Q>;
-			OtherPaddedVec o = {.gcc_vec={scalars...}};
+			using Tx = typename GetFirstType<A...>::FirstTx;
+			using OtherPaddedVec = PaddedVec<L, Tx, Q>;
+			OtherPaddedVec o = {.gcc_vec={Tx(scalars)...}};
 			PaddedVec<L, T, Q> converted = {.gcc_vec=__builtin_convertvector(o.gcc_vec, gcc_vec_t)};
 			return gcc_vec_to_data(converted);
 		}
