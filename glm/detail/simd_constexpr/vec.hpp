@@ -30,7 +30,7 @@ namespace glm
 	concept arithmetic = std::integral<T> || std::floating_point<T>;
 	template <typename T0, typename... T>
 	consteval bool SameArithmeticTypes() {
-		return (std::is_same_v<std::common_type_t<T0,T>, T> && ...);
+		return (std::is_same_v<std::common_type_t<T0,T>, std::common_type_t<T0,T>> && ...);
 	}
 	template <typename... T>
 	consteval bool NotSameArithmeticTypes() {

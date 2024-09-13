@@ -1,9 +1,9 @@
 /// @ref core
 /// @file glm/detail/type_vec3.hpp
-#if GLM_SIMD_CONSTEXPR == 0
 #pragma once
 
 #include "qualifier.hpp"
+#if GLM_SIMD_CONSTEXPR == 0
 #if GLM_CONFIG_SWIZZLE == GLM_SWIZZLE_OPERATOR
 #	include "_swizzle.hpp"
 #elif GLM_CONFIG_SWIZZLE == GLM_SWIZZLE_FUNCTION
