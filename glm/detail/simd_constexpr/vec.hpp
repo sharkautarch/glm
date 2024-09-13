@@ -109,10 +109,15 @@ namespace glm
 #endif
 namespace glm
 {
+	
 	template <length_t L, typename T, qualifier Q>
-	using EC = detail::ElementCollection<typename detail::storage<L, T, detail::is_aligned<Q>::value>::type, T, L>;
+	struct DataWrapper { // stupid wrapper to silence a warning: https://stackoverflow.com/a/59993590
+		using data_t = detail::_data_t<L, T, Q>;
+	};
+	template <length_t L, typename T, qualifier Q>
+	using EC = detail::ElementCollection<DataWrapper<L, T, Q>, T, L>;
 	template<length_t L, typename T, qualifier Q>
-	struct vec : detail::ElementCollection<typename detail::storage<L, T, detail::is_aligned<Q>::value>::type, T, L>
+	struct vec : detail::ElementCollection<DataWrapper<L, T, Q>, T, L>
 	{
 		// -- Data --
 		using EC<L, T, Q>::x;
@@ -146,12 +151,12 @@ namespace glm
 		// -- Component Access --
 		static constexpr length_t length(){	return L;	}
 		
-		inline GLM_CONSTEXPR T& operator[](length_t i)
+		inline constexpr T& operator[](length_t i)
 		{
 			if (!std::is_constant_evaluated()) {
 				GLM_ASSERT_LENGTH(i, L);
 			}
-			switch (std::max(i, length()))
+			switch (i)
 			{
 				default:
 				case 0:
@@ -177,12 +182,12 @@ namespace glm
 			}
 		}
 		
-		inline GLM_CONSTEXPR T operator[](length_t i) const
+		inline constexpr T operator[](length_t i) const
 		{
 			if (!std::is_constant_evaluated()) {
 				GLM_ASSERT_LENGTH(i, L);
 			}
-			switch (std::max(i, length()))
+			switch (i)
 			{
 				default:
 				case 0:
@@ -301,7 +306,7 @@ namespace glm
 			return var_t{RetPair{a, i}};
 		};
 		
-		constexpr vec() : EC<L, T, Q>{} {}
+		constexpr vec() = default;
 		constexpr vec(arithmetic auto scalar) : EC<L, T, Q>{.data= [scalar,this](){ auto s = [scalar](){ return scalar; }; return ctor_scalar(s); }() } {}
 
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx == 1 && NotVec1<L>)

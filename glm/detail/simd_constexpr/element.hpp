@@ -3,10 +3,11 @@ namespace glm::detail
 {
 	consteval bool NotEmpty(length_t I, length_t L) { return I <= L; }
 
-	template <typename data_t, typename T, length_t L>
+	template <typename DataWrapper, typename T, length_t L>
 	struct ElementCollection;
-	template <typename data_t, typename T>
-	struct ElementCollection<data_t, T, 4> {
+	template <typename DataWrapper, typename T>
+	struct ElementCollection<DataWrapper, T, 4> {
+		using data_t = DataWrapper::data_t;
 		union
 		{
 				struct {
@@ -21,8 +22,9 @@ namespace glm::detail
 	
 	struct Empty {};
 	#define G [[no_unique_address]]
-	template <typename data_t, typename T>
-	struct ElementCollection<data_t, T, 3> {
+	template <typename DataWrapper, typename T>
+	struct ElementCollection<DataWrapper, T, 3> {
+		using data_t = DataWrapper::data_t;
 		union
 		{
 				struct {
@@ -34,8 +36,9 @@ namespace glm::detail
 				data_t data;
 		};
 	};
-	template <typename data_t, typename T>
-	struct ElementCollection<data_t, T, 2> {
+	template <typename DataWrapper, typename T>
+	struct ElementCollection<DataWrapper, T, 2> {
+		using data_t = DataWrapper::data_t;
 		union
 		{
 				struct {
@@ -47,8 +50,9 @@ namespace glm::detail
 				data_t data;
 		};
 	};
-	template <typename data_t, typename T>
-	struct ElementCollection<data_t, T, 1> {
+	template <typename DataWrapper, typename T>
+	struct ElementCollection<DataWrapper, T, 1> {
+		using data_t = DataWrapper::data_t;
 		union
 		{
 				struct {
