@@ -121,18 +121,18 @@ namespace glm
 	struct vec : detail::ElementCollection<Q, T, L>
 	{
 		// -- Data --
-		using EC<L, T, Q>::x;
-		using EC<L, T, Q>::y;
-		using EC<L, T, Q>::z;
-		using EC<L, T, Q>::w;
-		using EC<L, T, Q>::r;
-		using EC<L, T, Q>::g;
-		using EC<L, T, Q>::b;
-		using EC<L, T, Q>::a;
-		using EC<L, T, Q>::s;
-		using EC<L, T, Q>::t;
-		using EC<L, T, Q>::p;
-		using EC<L, T, Q>::q;
+		using detail::ElementCollection<Q, T, L>::x;
+		using detail::ElementCollection<Q, T, L>::y;
+		using detail::ElementCollection<Q, T, L>::z;
+		using detail::ElementCollection<Q, T, L>::w;
+		using detail::ElementCollection<Q, T, L>::r;
+		using detail::ElementCollection<Q, T, L>::g;
+		using detail::ElementCollection<Q, T, L>::b;
+		using detail::ElementCollection<Q, T, L>::a;
+		using detail::ElementCollection<Q, T, L>::s;
+		using detail::ElementCollection<Q, T, L>::t;
+		using detail::ElementCollection<Q, T, L>::p;
+		using detail::ElementCollection<Q, T, L>::q;
 
 		using SimdHlp = detail::SimdHelpers<L, T, Q>;
 		using DataArray = VecDataArray<L, T, Q>;
@@ -596,7 +596,7 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & operator|=(vec<1, Tx, Q> const& v) requires (NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> & operator|=(vec<1, Tx, Q>  v) requires (NotVec1<L>)
 		{
 			if constexpr (L < 3) {
 				this->data |= v.data;
@@ -606,7 +606,7 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & operator|=(vec<L, Tx, Q> const& v)
+		inline GLM_CONSTEXPR vec<L, T, Q> & operator|=(vec<L, Tx, Q>  v)
 		{
 			if constexpr (L < 3) {
 				this->data |= v.data;
@@ -625,7 +625,7 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & operator^=(vec<1, Tx, Q> const& v) requires (NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> & operator^=(vec<1, Tx, Q>  v) requires (NotVec1<L>)
 		{
 			if constexpr (L < 3) {
 				this->data ^= v.data;
@@ -635,7 +635,7 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & operator^=(vec<L, Tx, Q> const& v)
+		inline GLM_CONSTEXPR vec<L, T, Q> & operator^=(vec<L, Tx, Q>  v)
 		{
 			return (*this = detail::compute_vec_xor<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
@@ -650,7 +650,7 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & operator<<=(vec<1, Tx, Q> const& v) requires (NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> & operator<<=(vec<1, Tx, Q>  v) requires (NotVec1<L>)
 		{
 			if constexpr (L < 3) {
 				this->data <<= v.data;
@@ -660,7 +660,7 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & operator<<=(vec<L, Tx, Q> const& v)
+		inline GLM_CONSTEXPR vec<L, T, Q> & operator<<=(vec<L, Tx, Q>  v)
 		{
 			if constexpr (L < 3) {
 				this->data <<= v.data;
@@ -679,7 +679,7 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & operator>>=(vec<1, Tx, Q> const& v) requires (NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> & operator>>=(vec<1, Tx, Q>  v) requires (NotVec1<L>)
 		{
 			if constexpr (L < 3) {
 				this->data >>= v.data;
@@ -689,7 +689,7 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & operator>>=(vec<L, Tx, Q> const& v)
+		inline GLM_CONSTEXPR vec<L, T, Q> & operator>>=(vec<L, Tx, Q>  v)
 		{
 			if constexpr (L < 3) {
 				this->data >>= v.data;
@@ -718,17 +718,17 @@ namespace glm
 		}
 
 		template <length_t Lx>
-		inline GLM_CONSTEXPR vec<L, T, Q> operator+(vec<Lx, T, Q> const& v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> operator+(vec<Lx, T, Q> v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 			return vec<L, T, Q>(*this) += v2;
 		}
 
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator+(T scalar, vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator+(T scalar, vec<L, T, Q> v)
 		{
 			return vec<L, T, Q>(v) += scalar;
 		}
 
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator+(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator+(vec<1, T, Q> v1, vec<L, T, Q>  v2)
 		{
 			return vec<L, T, Q>(v2) += v1;
 		}
@@ -744,22 +744,22 @@ namespace glm
 		}
 
 		template <length_t Lx>
-		inline GLM_CONSTEXPR vec<L, T, Q> operator-(vec<Lx, T, Q> const& v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> operator-(vec<Lx, T, Q> v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 			return vec<L, T, Q>(*this) -= v2;
 		}
 
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator-(T scalar, vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator-(T scalar, vec<L, T, Q> v)
 		{
 			return vec<L, T, Q>(scalar) -= v;
 		}
 
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator-(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2) requires (NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator-(vec<1, T, Q> v1, vec<L, T, Q> v2) requires (NotVec1<L>)
 		{
 			return vec<L, T, Q>(v1.x) -= v2;
 		}
 
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator-(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator-(vec<L, T, Q> v1, vec<L, T, Q> v2)
 		{
 			return vec<L, T, Q>(v1) -= v2;
 		}
@@ -770,25 +770,25 @@ namespace glm
 		}
 
 		template <length_t Lx>
-		inline GLM_CONSTEXPR vec<L, T, Q> operator*(vec<Lx, T, Q> const& v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> operator*(vec<Lx, T, Q> v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 			return vec<L, T, Q>(*this) *= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator*(T scalar, vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator*(T scalar, vec<L, T, Q> v)
 		{
 			return vec<L, T, Q>(v) *= scalar;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator*(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2) requires (NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator*(vec<1, T, Q> v1, vec<L, T, Q> v2) requires (NotVec1<L>)
 		{
 			return vec<L, T, Q>(v2) *= v1;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator*(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator*(vec<L, T, Q> v1, vec<L, T, Q>  v2)
 		{
 			return vec<L, T, Q>(v1) *= v2;
 		}
@@ -801,25 +801,25 @@ namespace glm
 
 
 		template <length_t Lx>
-		inline GLM_CONSTEXPR vec<L, T, Q> operator/(vec<Lx, T, Q> const& v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> operator/(vec<Lx, T, Q>  v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 			return vec<L, T, Q>(*this) /= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator/(T scalar, vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator/(T scalar, vec<L, T, Q>  v)
 		{
 			return vec<L, T, Q>(scalar) /= v;
 		}
 
 		template <length_t Lx>
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator/(vec<Lx, T, Q> const& v1, vec<L, T, Q> const& v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator/(vec<Lx, T, Q>  v1, vec<L, T, Q>  v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 			return vec<L, T, Q>(v1.x) /= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator/(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator/(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
 			return vec<L, T, Q>(v1) /= v2;
 		}
@@ -827,212 +827,212 @@ namespace glm
 		// -- Binary bit operators --
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator%(vec<L, T, Q> const& v, T scalar)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator%(vec<L, T, Q>  v, T scalar)
 		{
 			return vec<L, T, Q>(v) %= scalar;
 		}
 
 		template <length_t Lx>
-		inline GLM_CONSTEXPR vec<L, T, Q> operator%(vec<Lx, T, Q> const& v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> operator%(vec<Lx, T, Q>  v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 			return vec<L, T, Q>(*this) %= v2.x;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator%(T scalar, vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator%(T scalar, vec<L, T, Q>  v)
 		{
 			return vec<L, T, Q>(scalar) %= v;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator%(vec<1, T, Q> const& scalar, vec<L, T, Q> const& v) requires (NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator%(vec<1, T, Q>  scalar, vec<L, T, Q>  v) requires (NotVec1<L>)
 		{
 			return vec<L, T, Q>(scalar.x) %= v;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator%(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator%(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
 			return vec<L, T, Q>(v1) %= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator&(vec<L, T, Q> const& v, T scalar)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator&(vec<L, T, Q>  v, T scalar)
 		{
 			return vec<L, T, Q>(v) &= scalar;
 		}
 
 		
-		inline GLM_CONSTEXPR vec<L, T, Q> operator&(vec<1, T, Q> const& scalar) requires (NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> operator&(vec<1, T, Q>  scalar) requires (NotVec1<L>)
 		{
 			return vec<L, T, Q>(*this) &= scalar;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator&(T scalar, vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator&(T scalar, vec<L, T, Q>  v)
 		{
 			return vec<L, T, Q>(scalar) &= v;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator&(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2) requires (NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator&(vec<1, T, Q>  v1, vec<L, T, Q>  v2) requires (NotVec1<L>)
 		{
 			return vec<L, T, Q>(v1.x) &= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator&(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator&(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
 			return vec<L, T, Q>(v1) &= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator|(vec<L, T, Q> const& v, T scalar)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator|(vec<L, T, Q>  v, T scalar)
 		{
 			return vec<L, T, Q>(v) |= scalar;
 		}
 
 		template <length_t Lx>
-		inline GLM_CONSTEXPR vec<L, T, Q> operator|(vec<Lx, T, Q> const& v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> operator|(vec<Lx, T, Q>  v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 			return vec<L, T, Q>(*this) |= v2.x;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator|(T scalar, vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator|(T scalar, vec<L, T, Q>  v)
 		{
 			return vec<L, T, Q>(scalar) |= v;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator|(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2) requires (NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator|(vec<1, T, Q>  v1, vec<L, T, Q>  v2) requires (NotVec1<L>)
 		{
 			return vec<L, T, Q>(v1.x) |= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator|(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator|(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
 			return vec<L, T, Q>(v1) |= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator^(vec<L, T, Q> const& v, T scalar)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator^(vec<L, T, Q>  v, T scalar)
 		{
 			return vec<L, T, Q>(v) ^= scalar;
 		}
 
 		template <length_t Lx>
-		inline GLM_CONSTEXPR vec<L, T, Q> operator^(vec<Lx, T, Q> const& v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> operator^(vec<Lx, T, Q>  v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 			return vec<L, T, Q>(*this) ^= v2.x;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator^(T scalar, vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator^(T scalar, vec<L, T, Q>  v)
 		{
 			return vec<L, T, Q>(scalar) ^= v;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator^(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2) requires (NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator^(vec<1, T, Q>  v1, vec<L, T, Q>  v2) requires (NotVec1<L>)
 		{
 			return vec<L, T, Q>(v1.x) ^= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator^(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator^(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
 			return vec<L, T, Q>(v1) ^= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<L, T, Q> const& v, T scalar)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<L, T, Q>  v, T scalar)
 		{
 			return vec<L, T, Q>(v) <<= scalar;
 		}
 
 		template <length_t Lx>
-		inline GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<Lx, T, Q> const& v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<Lx, T, Q>  v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 			return vec<L, T, Q>(*this) <<= v2.x;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator<<(T scalar, vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator<<(T scalar, vec<L, T, Q>  v)
 		{
 			return vec<L, T, Q>(scalar) <<= v;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2) requires (NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<1, T, Q>  v1, vec<L, T, Q>  v2) requires (NotVec1<L>)
 		{
 			return vec<L, T, Q>(v1.x) <<= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator<<(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
 			return vec<L, T, Q>(v1) <<= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<L, T, Q> const& v, T scalar)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<L, T, Q>  v, T scalar)
 		{
 			return vec<L, T, Q>(v) >>= scalar;
 		}
 
 		template <length_t Lx>
-		inline GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<Lx, T, Q> const& v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		inline GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<Lx, T, Q>  v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 			return vec<L, T, Q>(*this) >>= v2.x;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator>>(T scalar, vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator>>(T scalar, vec<L, T, Q>  v)
 		{
 			return vec<L, T, Q>(scalar) >>= v;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<1, T, Q> const& v1, vec<L, T, Q> const& v2) requires (NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<1, T, Q>  v1, vec<L, T, Q>  v2) requires (NotVec1<L>)
 		{
 			return vec<L, T, Q>(v1.x) >>= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator>>(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
 			return vec<L, T, Q>(v1) >>= v2;
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator~(vec<L, T, Q> const& v)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator~(vec<L, T, Q>  v)
 		{
 			return detail::compute_vec_bitwise_not<4, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v);
 		}
 
 		// -- Boolean operators --
 		
-		friend inline GLM_CONSTEXPR bool operator==(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR bool operator==(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
 			return detail::compute_vec_equal<4, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
 		}
 
 		
-		friend inline GLM_CONSTEXPR bool operator!=(vec<L, T, Q> const& v1, vec<L, T, Q> const& v2)
+		friend inline GLM_CONSTEXPR bool operator!=(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
 			return detail::compute_vec_nequal<4, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
 		}
 	};
 	
 	template <length_t Lx, typename Tx, qualifier Qx> requires (std::is_same_v<Tx, bool>)
-	inline GLM_CONSTEXPR vec<Lx, bool, Qx> operator&&(vec<Lx, Tx, Qx> const& v1, vec<Lx, Tx, Qx> const& v2)
+	inline GLM_CONSTEXPR vec<Lx, bool, Qx> operator&&(vec<Lx, Tx, Qx>  v1, vec<Lx, Tx, Qx>  v2)
 	{
 		return vec<Lx, bool, Qx>(v1.x && v2.x, v1.y && v2.y, v1.z && v2.z, v1.w && v2.w);
 	}
 	template <length_t Lx, typename Tx, qualifier Qx> requires (std::is_same_v<Tx, bool>)
-	inline GLM_CONSTEXPR vec<Lx, bool, Qx> operator||(vec<Lx, bool, Qx> const& v1, vec<Lx, bool, Qx> const& v2)
+	inline GLM_CONSTEXPR vec<Lx, bool, Qx> operator||(vec<Lx, bool, Qx>  v1, vec<Lx, bool, Qx>  v2)
 	{
 		return vec<Lx, bool, Qx>(v1.x || v2.x, v1.y || v2.y, v1.z || v2.z, v1.w || v2.w);
 	}
