@@ -2,12 +2,11 @@
 namespace glm::detail
 {
 	consteval bool NotEmpty(length_t I, length_t L) { return I <= L; }
-
-	template <typename DataWrapper, typename T, length_t L>
+	template <qualifier Q, typename T, length_t L>
 	struct ElementCollection;
-	template <typename DataWrapper, typename T>
-	struct ElementCollection<DataWrapper, T, 4> {
-		using data_t = DataWrapper::data_t;
+	template <qualifier Q, typename T>
+	struct ElementCollection<Q, T, 4> {
+		using data_t = typename detail::storage<4, T, detail::is_aligned<Q>::value>::type;
 		union
 		{
 				struct {
@@ -20,46 +19,45 @@ namespace glm::detail
 		};
 	};
 	
-	struct Empty {};
-	#define G [[no_unique_address]]
-	template <typename DataWrapper, typename T>
-	struct ElementCollection<DataWrapper, T, 3> {
-		using data_t = DataWrapper::data_t;
+
+	template <qualifier Q, typename T>
+	struct ElementCollection<Q, T, 3> {
+		using data_t = typename detail::storage<3, T, detail::is_aligned<Q>::value>::type;
+		struct w {}; struct a {}; struct q{};
 		union
 		{
 				struct {
 					union { T x, r, s; }; 
 					union { T y, g, t; };
 					union { T z, b, p; };
-					union { G Empty w, a, q; };
 				};
 				data_t data;
 		};
 	};
-	template <typename DataWrapper, typename T>
-	struct ElementCollection<DataWrapper, T, 2> {
-		using data_t = DataWrapper::data_t;
+	template <qualifier Q, typename T>
+	struct ElementCollection<Q, T, 2> {
+		using data_t = typename detail::storage<2, T, detail::is_aligned<Q>::value>::type;
+		struct z {}; struct b {}; struct p{};
+		struct w {}; struct a {}; struct q{};
 		union
 		{
 				struct {
 					union { T x, r, s; }; 
 					union { T y, g, t; };
-					union { G Empty z, b, p; };
-					union { G Empty w, a, q; };
 				};
 				data_t data;
 		};
 	};
-	template <typename DataWrapper, typename T>
-	struct ElementCollection<DataWrapper, T, 1> {
-		using data_t = DataWrapper::data_t;
+	template <qualifier Q, typename T>
+	struct ElementCollection<Q, T, 1> {
+		using data_t = typename detail::storage<1, T, detail::is_aligned<Q>::value>::type;
+		struct y {}; struct g {}; struct t{};
+		struct z {}; struct b {}; struct p{};
+		struct w {}; struct a {}; struct q{};
 		union
 		{
 				struct {
 					union { T x, r, s; }; 
-					union { G Empty y, g, t; };
-					union { G Empty z, b, p; };
-					union { G Empty w, a, q; };
 				};
 				data_t data;
 		};

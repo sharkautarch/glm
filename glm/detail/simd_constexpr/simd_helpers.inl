@@ -64,8 +64,8 @@ namespace glm::detail
 			//assuming that number of scalars is always the same as the length of the to-be-constructed vector
 			using Tx = typename GetFirstType<A...>::FirstTx;
 			using OtherPaddedVec = PaddedVec<L, Tx, Q>;
-			OtherPaddedVec o = {.gcc_vec={Tx(scalars)...}};
-			PaddedVec<L, T, Q> converted = {.gcc_vec=__builtin_convertvector(o.gcc_vec, gcc_vec_t)};
+			typename OtherPaddedVec::GccV o = {Tx(scalars)...};
+			PaddedVec<L, T, Q> converted = {.gcc_vec=__builtin_convertvector(o, gcc_vec_t)};
 			return gcc_vec_to_data(converted);
 		}
 	};

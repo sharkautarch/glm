@@ -108,6 +108,28 @@ namespace detail
 #	endif
 
 #	if GLM_ARCH & GLM_ARCH_SSE2_BIT
+#if defined(__clang__) || defined(__GNUC__)
+	template<typename T>
+	struct storage<2, T, false>
+	{
+		typedef T type __attribute__((aligned(sizeof(T)),vector_size(2*sizeof(T))));
+	};
+	template<typename T>
+	struct storage<1, T, false>
+	{
+		typedef T type __attribute__((aligned(1),vector_size(sizeof(T))));
+	};
+	template<typename T>
+	struct storage<2, T, true>
+	{
+		typedef T type __attribute__((aligned(sizeof(T)),vector_size(2*sizeof(T))));
+	};
+	template<typename T>
+	struct storage<1, T, true>
+	{
+		typedef T type __attribute__((aligned(sizeof(T)),vector_size(sizeof(T))));
+	};
+#endif
 	template<>
 	struct storage<4, float, true>
 	{

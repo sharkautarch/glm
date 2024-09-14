@@ -13,6 +13,7 @@
 #include <array>
 #include <variant>
 #include <cstring>
+#include <ranges>
 namespace glm
 {
 	template <length_t L>
@@ -40,7 +41,7 @@ namespace glm
 	namespace detail
 	{
 		template <length_t L, typename T, qualifier Q>
-		using _ArrT = T[L];
+		using _ArrT = std::array<T,L>;
 
 		template <length_t L, typename T, qualifier Q>
 		using _data_t = typename detail::storage<L, T, detail::is_aligned<Q>::value>::type;
@@ -115,9 +116,9 @@ namespace glm
 		using data_t = detail::_data_t<L, T, Q>;
 	};
 	template <length_t L, typename T, qualifier Q>
-	using EC = detail::ElementCollection<DataWrapper<L, T, Q>, T, L>;
+	using EC = detail::ElementCollection<Q, T, L>;
 	template<length_t L, typename T, qualifier Q>
-	struct vec : detail::ElementCollection<DataWrapper<L, T, Q>, T, L>
+	struct vec : detail::ElementCollection<Q, T, L>
 	{
 		// -- Data --
 		using EC<L, T, Q>::x;
@@ -142,6 +143,7 @@ namespace glm
 		typedef vec<L, T, Q> type;
 		typedef vec<L, bool, Q> bool_type;
 		static constexpr qualifier k_qual = Q;
+		static constexpr length_t k_len = L;
 		
 		enum is_aligned
 		{
@@ -247,7 +249,7 @@ namespace glm
 #				endif
 		
 		template <typename ScalarGetter>
-		constexpr auto ctor_scalar(ScalarGetter scalar) {
+		static constexpr auto ctor_scalar(ScalarGetter scalar) {
 			if (std::is_constant_evaluated()) {
 				DataArray a;
 		    for (length_t i = 0; i < L; i++) {
@@ -260,7 +262,7 @@ namespace glm
 		}
 		
 		template <typename VecGetter>
-		constexpr auto ctor(VecGetter vecGetter) {
+		static constexpr auto ctor(VecGetter vecGetter) {
 			if (std::is_constant_evaluated()) {
 				DataArray a = {};
 				auto v = vecGetter();
@@ -276,44 +278,45 @@ namespace glm
 				return SimdHlp::simd_ctor(vecGetter());
 			}
 		}
+		template <length_t len>
+		using RetArr = T[len];
 		
-		typedef struct {
-			DataArray a;
-			length_t i;
-		} RetPair;
-		static inline auto ctor_mixed_constexpr_single = []<typename var_t>(auto&& vs0, length_t index) -> var_t
+		template <typename Vs0>
+		static constexpr length_t ctor_mixed_constexpr_single_get_length()
 		{
-			DataArray a {};
-			using VTX = std::decay_t<decltype(vs0)>;
-			length_t i = 0;
-			auto&& __restrict__ _vs0 = vs0;
+			if constexpr ( std::is_integral_v<Vs0> || std::is_floating_point_v<Vs0> ) {
+				return 1;
+			} else if constexpr ( ( requires { Vs0::k_len; }) ) {
+				return Vs0::k_len;
+			} else {
+				return 1;
+			} 
+		}
+		static inline auto ctor_mixed_constexpr_single = [](auto vs0) -> auto
+		{
+			using VTX = decltype(vs0);
 			if constexpr ( std::is_integral_v<VTX> || std::is_floating_point_v<VTX> ) {
-				a.p[index] = _vs0;
-				i++;
-			} else if constexpr ( ( requires (VTX v){ VTX::value_type; _vs0.length(); }) ) {
+				return RetArr<1>{vs0};
+			} else if constexpr ( ( requires { VTX::k_len; }) ) {
 				using Tx = VTX::value_type;
-				using ArrX = VecDataArray<_vs0.length(), Tx, VTX::k_qual>;
-				ArrX ax = std::bit_cast<ArrX>(_vs0.data);
-				for (Tx tx : ax.p) {
-					a.p[index+i++] = (T)tx;
-				}
-			} else if constexpr ( requires (VTX v){ VTX::value_type; }) {
+				using ArrX = VecDataArray<VTX::k_len, Tx, VTX::k_qual>;
+				
+				ArrX ax = std::bit_cast<ArrX>(vs0.data);
+				return ax;
+			} else {
 				using Tx = VTX::value_type;
-				a.p[index] = (Tx) _vs0;
-				i++;
-			}
-			
-			return var_t{RetPair{a, i}};
+				return RetArr<1>{(Tx)vs0};
+			} 
 		};
 		
 		constexpr vec() = default;
-		constexpr vec(arithmetic auto scalar) : EC<L, T, Q>{.data= [scalar,this](){ auto s = [scalar](){ return scalar; }; return ctor_scalar(s); }() } {}
+		constexpr vec(arithmetic auto scalar) : EC<L, T, Q>{.data= [scalar](){ auto s = [scalar](){ return scalar; }; return ctor_scalar(s); }() } {}
 
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx == 1 && NotVec1<L>)
-	  constexpr vec(vec<Lx, Tx, Qx> v) : EC<L, T, Q>{.data= [d=std::bit_cast<VecDataArray<Lx, Tx, Qx>>(v.data),this](){ auto s = [scalar=d.p[0]](){ return scalar; }; return ctor_scalar(s); }() } {}
+	  constexpr vec(vec<Lx, Tx, Qx> v) : EC<L, T, Q>{.data= [d=std::bit_cast<VecDataArray<Lx, Tx, Qx>>(v.data)](){ auto s = [scalar=d.p[0]](){ return scalar; }; return ctor_scalar(s); }() } {}
 		
 		template <length_t Lx, typename Tx, qualifier Qx> requires (L == 1 || Lx != 1)
-		constexpr vec(vec<Lx, Tx, Qx> v) : EC<L, T, Q>{.data= [v, this](){ auto vv = [v](){ return v; }; return ctor(vv); }() } {}
+		constexpr vec(vec<Lx, Tx, Qx> v) : EC<L, T, Q>{.data= [v](){ auto vv = [v](){ return v; }; return ctor(vv); }() } {}
 		
 		template <arithmetic... Scalar> requires (sizeof...(Scalar) == L)
 		constexpr vec(Scalar... scalar)
@@ -329,26 +332,38 @@ namespace glm
 				}()
 			} {}
 			
-		template <typename... VecOrScalar> requires (sizeof...(VecOrScalar) > 1 && NotSameArithmeticTypes<VecOrScalar...>())
-		constexpr vec(VecOrScalar... vecOrScalar)
+		template <typename VecOrScalar0, typename... VecOrScalar> requires (sizeof...(VecOrScalar) >= 1 && NotSameArithmeticTypes<VecOrScalar0, VecOrScalar...>())
+		constexpr vec(VecOrScalar0 vecOrScalar0, VecOrScalar... vecOrScalar)
 		: EC<L, T, Q>
-			{.data= [vecOrScalar...]() -> data_t
+			{.data= [vecOrScalar0, vecOrScalar...]() -> data_t
 				{
 					//type_vecx.inl never had any simd versions for ctor from mixes of scalars & vectors,
 					//so I don't really need to figure out how I'd make a generic simd version for this ctor 
-					DataArray a {};
-					length_t i = 0;
-					using var_t = std::variant<VecOrScalar..., RetPair>;
-					for (auto var_vs : std::array<var_t, sizeof...(vecOrScalar)>{ vecOrScalar... } ) {
-						auto visitee = [i](auto&& arg) -> var_t { return ctor_mixed_constexpr_single.template operator()<var_t>(arg, i); };
-						RetPair pair = std::get<RetPair>(std::visit(visitee, var_vs));
-						for (length_t j = pair.i; j < i+pair.i; j++) {
-							a.p[j] = pair.a.p[j];
+					
+					constexpr auto i = ctor_mixed_constexpr_single_get_length<VecOrScalar0>();
+					struct PaddedA {
+						VecDataArray<i, T, Q> a;
+						unsigned char padding[sizeof(VecDataArray<L, T, Q>) - sizeof(VecDataArray<i, T, Q>)];
+					};
+					PaddedA aa = {.a=ctor_mixed_constexpr_single(vecOrScalar0)};
+					constexpr std::array<length_t, sizeof...(VecOrScalar)> lengths = { ctor_mixed_constexpr_single_get_length<VecOrScalar>()...};
+					const auto params = std::tuple{vecOrScalar...};
+					
+					const auto arr = ctor_mixed_constexpr_single(std::get<0>(params));
+					std::memcpy(aa.a.p.begin()+i, arr, sizeof(T)*lengths[0]);
+					constexpr auto i2 = i + lengths[0];
+					
+					if constexpr (sizeof...(VecOrScalar) > 1) {
+						const auto arr2 = ctor_mixed_constexpr_single(std::get<1>(params));
+						std::memcpy(aa.a.p.begin()+i2, arr2, sizeof(T)*lengths[1]);
+						constexpr auto i3 = i2 + lengths[1];
+						if constexpr (sizeof...(VecOrScalar) > 2) {
+							const auto arr3 = ctor_mixed_constexpr_single(std::get<2>(params));
+							std::memcpy(aa.a.p.begin()+i3, arr3, sizeof(T)*lengths[2]);
 						}
-						i+=pair.i;
 					}
 					
-					return std::bit_cast<data_t>(a);
+					return std::bit_cast<data_t>(aa);
 				}()
 			} {}
 			
@@ -363,70 +378,118 @@ namespace glm
 		
 		inline GLM_CONSTEXPR vec<L, T, Q>& operator+=(arithmetic auto scalar)
 		{
-			return (*this = detail::compute_vec_add<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+			if constexpr (L < 3) {
+				this->data += scalar;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_add<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator+=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			return (*this = detail::compute_vec_add<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
+			if constexpr (L < 3) {
+				this->data += v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_add<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator+=(vec<L, Tx, Q> v)
 		{
-			return (*this = detail::compute_vec_add<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data += v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_add<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator-=(arithmetic auto scalar)
 		{
-			return (*this = detail::compute_vec_sub<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+			if constexpr (L < 3) {
+				this->data -= scalar;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_sub<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator-=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			return (*this = detail::compute_vec_sub<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
+			if constexpr (L < 3) {
+				this->data -= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_sub<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator-=(vec<L, Tx, Q> v)
 		{
-			return (*this = detail::compute_vec_sub<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data -= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_sub<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator*=(arithmetic auto scalar)
 		{
-			return (*this = detail::compute_vec_mul<L,T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+			if constexpr (L < 3) {
+				this->data *= scalar;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_mul<L,T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator*=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			return (*this = detail::compute_vec_mul<L,T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
+			if constexpr (L < 3) {
+				this->data *= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_mul<L,T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator*=(vec<L, Tx, Q> v)
 		{
-			return (*this = detail::compute_vec_mul<L,T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data *= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_mul<L,T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator/=(arithmetic auto scalar)
 		{
+			if constexpr (L < 3) {
+				this->data /= scalar;
+				return *this;
+			} else
 			return (*this = detail::compute_vec_div<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator/=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			return (*this = detail::compute_vec_div<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
+			if constexpr (L < 3) {
+				this->data /= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_div<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v.x)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator/=(vec<L, Tx, Q> v)
 		{
-			return (*this = detail::compute_vec_div<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data /= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_div<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 		
 		// -- Increment and decrement operators --
@@ -467,64 +530,108 @@ namespace glm
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator%=(arithmetic auto scalar)
 		{
-			return (*this = detail::compute_vec_mod<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+			if constexpr (L < 3) {
+				this->data %= scalar;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_mod<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator%=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			return (*this = detail::compute_vec_mod<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data *= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_mod<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator%=(vec<L, Tx, Q> v)
 		{
-			return (*this = detail::compute_vec_mod<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data %= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_mod<L, T, Q, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator&=(arithmetic auto scalar)
 		{
-			return (*this = detail::compute_vec_and<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+			if constexpr (L < 3) {
+				this->data &= scalar;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_and<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator&=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			return (*this = detail::compute_vec_and<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data &= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_and<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator&=(vec<L, Tx, Q> v)
 		{
-			return (*this = detail::compute_vec_and<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data &= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_and<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator|=(arithmetic auto scalar)
 		{
-			return (*this = detail::compute_vec_or<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+			if constexpr (L < 3) {
+				this->data |= scalar;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_or<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator|=(vec<1, Tx, Q> const& v) requires (NotVec1<L>)
 		{
-			return (*this = detail::compute_vec_or<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data |= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_or<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator|=(vec<L, Tx, Q> const& v)
 		{
-			return (*this = detail::compute_vec_or<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data |= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_or<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator^=(arithmetic auto scalar)
 		{
-			return (*this = detail::compute_vec_xor<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+			if constexpr (L < 3) {
+				this->data ^= scalar;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_xor<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator^=(vec<1, Tx, Q> const& v) requires (NotVec1<L>)
 		{
-			return (*this = detail::compute_vec_xor<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data ^= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_xor<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		template<typename Tx>
@@ -535,36 +642,60 @@ namespace glm
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator<<=(arithmetic auto scalar)
 		{
-			return (*this = detail::compute_vec_shift_left<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+			if constexpr (L < 3) {
+				this->data <<= scalar;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_shift_left<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator<<=(vec<1, Tx, Q> const& v) requires (NotVec1<L>)
 		{
-			return (*this = detail::compute_vec_shift_left<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data <<= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_shift_left<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator<<=(vec<L, Tx, Q> const& v)
 		{
-			return (*this = detail::compute_vec_shift_left<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data <<= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_shift_left<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator>>=(arithmetic auto scalar)
 		{
-			return (*this = detail::compute_vec_shift_right<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
+			if constexpr (L < 3) {
+				this->data >>= scalar;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_shift_right<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(scalar)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator>>=(vec<1, Tx, Q> const& v) requires (NotVec1<L>)
 		{
-			return (*this = detail::compute_vec_shift_right<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data >>= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_shift_right<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator>>=(vec<L, Tx, Q> const& v)
 		{
-			return (*this = detail::compute_vec_shift_right<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if constexpr (L < 3) {
+				this->data >>= v.data;
+				return *this;
+			} else
+				return (*this = detail::compute_vec_shift_right<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
 		}
 
 		// -- Unary constant operators --
@@ -906,3 +1037,5 @@ namespace glm
 		return vec<Lx, bool, Qx>(v1.x || v2.x, v1.y || v2.y, v1.z || v2.z, v1.w || v2.w);
 	}
 }
+static_assert( glm::detail::is_aligned<(glm::qualifier)0>::value == false);
+static_assert(sizeof(glm::vec<3, float, (glm::qualifier)0>) == 12);
