@@ -16,6 +16,11 @@
 #include <ranges>
 namespace glm
 {
+#ifdef __clang__
+#define GLM_TRIVIAL __attribute__((trivial_abi))
+#else
+#define GLM_TRIVIAL
+#endif
 	template <length_t L>
 	concept NotVec1 = !std::is_same_v<std::integral_constant<length_t, L>, std::integral_constant<length_t, 1>>;
 	template <qualifier Q>
@@ -119,7 +124,7 @@ namespace glm
 	template <length_t L, typename T, qualifier Q>
 	using EC = detail::ElementCollection<Q, T, L>;
 	template<length_t L, typename T, qualifier Q>
-	struct vec : detail::ElementCollection<Q, T, L>
+	struct GLM_TRIVIAL vec : detail::ElementCollection<Q, T, L>
 	{
 		// -- Data --
 		using detail::ElementCollection<Q, T, L>::x;
@@ -282,7 +287,7 @@ namespace glm
 			}
 		}
 		template <length_t len>
-		using RetArr = T[len];
+		using RetArr = std::array<T, len>;
 		
 		template <typename Vs0>
 		static constexpr length_t ctor_mixed_constexpr_single_get_length()
@@ -353,19 +358,16 @@ namespace glm
 					const auto params = std::tuple{vecOrScalar...};
 					
 					const auto arr = ctor_mixed_constexpr_single(std::get<0>(params));
-					if (arr) [[likely]]
-						std::memcpy(aa.a.p.begin()+i, arr, sizeof(T)*lengths[0]);
+					std::ranges::copy(arr.cbegin(), aa.a.p.begin()+i, aa.a.p.begin()+i + sizeof(T)*lengths[0]);
 					constexpr auto i2 = i + lengths[0];
 					
 					if constexpr (sizeof...(VecOrScalar) > 1) {
 						const auto arr2 = ctor_mixed_constexpr_single(std::get<1>(params));
-						if (arr2) [[likely]]
-							std::memcpy(aa.a.p.begin()+i2, arr2, sizeof(T)*lengths[1]);
+						std::ranges::copy(arr2.cbegin(), aa.a.p.begin()+i2, aa.a.p.begin()+i2 + sizeof(T)*lengths[1]);
 						constexpr auto i3 = i2 + lengths[1];
 						if constexpr (sizeof...(VecOrScalar) > 2) {
 							const auto arr3 = ctor_mixed_constexpr_single(std::get<2>(params));
-							if (arr3) [[likely]]
-								std::memcpy(aa.a.p.begin()+i3, arr3, sizeof(T)*lengths[2]);
+							std::ranges::copy(arr3.cbegin(), aa.a.p.begin()+i3, aa.a.p.begin()+i3 + sizeof(T)*lengths[2]);
 						}
 					}
 					
@@ -460,7 +462,7 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & operator*=(vec<L, Tx, Q> const& __restrict__ v) __restrict__
+		inline GLM_CONSTEXPR vec<L, T, Q> & operator*=(vec<L, Tx, Q> const& __restrict__ v)
 		{
 			if constexpr (L < 3) {
 				this->data *= v.data;

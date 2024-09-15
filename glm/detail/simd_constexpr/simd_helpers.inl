@@ -69,7 +69,7 @@ namespace glm::detail
 		{
 			//assuming that number of scalars is always the same as the length of the to-be-constructed vector
 			gcc_vec_t v;
-			std::array<T, sizeof...(scalars)> pack{scalars...};
+			std::array<T, sizeof...(scalars)> pack{static_cast<T>(scalars)...};
 			for (int i = 0; i != sizeof...(scalars); i++ ) {
 				v[i] = pack[i];
 				pack[i].T::~T();

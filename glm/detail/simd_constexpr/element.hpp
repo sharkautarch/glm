@@ -3,19 +3,19 @@ namespace glm::detail
 {
 	consteval bool NotEmpty(length_t I, length_t L) { return I <= L; }
 	struct Empty {};
-	struct RowTwo {
+	struct  GLM_TRIVIAL RowTwo {
 		[[no_unique_address]] Empty y; [[no_unique_address]] Empty g; [[no_unique_address]] Empty t;
 	};
-	struct RowThree {
+	struct GLM_TRIVIAL RowThree {
 		[[no_unique_address]] Empty z; [[no_unique_address]] Empty b; [[no_unique_address]] Empty p;
 	};
-	struct RowFour {
+	struct GLM_TRIVIAL RowFour {
 		[[no_unique_address]] Empty w; [[no_unique_address]] Empty a; [[no_unique_address]] Empty q;
 	};
 	template <qualifier Q, typename T, length_t L>
 	struct ElementCollection;
 	template <qualifier Q, typename T>
-	struct ElementCollection<Q, T, 4> {
+	struct  GLM_TRIVIAL ElementCollection<Q, T, 4> {
 		using data_t = typename detail::storage<4, T, detail::is_aligned<Q>::value>::type;
 		union
 		{
@@ -31,7 +31,7 @@ namespace glm::detail
 	
 
 	template <qualifier Q, typename T>
-	struct ElementCollection<Q, T, 3> : RowFour {
+	struct GLM_TRIVIAL ElementCollection<Q, T, 3> : RowFour {
 		using data_t = typename detail::storage<3, T, detail::is_aligned<Q>::value>::type;
 		using RowFour::w;
 		using RowFour::a;
@@ -47,7 +47,7 @@ namespace glm::detail
 		};
 	};
 	template <qualifier Q, typename T>
-	struct ElementCollection<Q, T, 2> : RowThree, RowFour {
+	struct GLM_TRIVIAL ElementCollection<Q, T, 2> : RowThree, RowFour {
 		using data_t = typename detail::storage<2, T, detail::is_aligned<Q>::value>::type;
 		using RowThree::z;
 		using RowThree::b;
@@ -65,7 +65,7 @@ namespace glm::detail
 		};
 	};
 	template <qualifier Q, typename T>
-	struct ElementCollection<Q, T, 1> : RowTwo, RowThree, RowFour {
+	struct GLM_TRIVIAL ElementCollection<Q, T, 1> : RowTwo, RowThree, RowFour {
 		using data_t = typename detail::storage<1, T, detail::is_aligned<Q>::value>::type;
 		using RowTwo::y;
 		using RowTwo::g;
