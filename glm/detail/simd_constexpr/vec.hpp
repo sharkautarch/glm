@@ -94,9 +94,10 @@ namespace glm
 		};
 	}
 	
+	/*template <length_t L, typename T, qualifier Q>
+	using PaddedGccVec = detail::PaddedGccVec<L, T, Q, detail::BVecNeedsPadding<L, T, Q>()>;*/
 	template <length_t L, typename T, qualifier Q>
-	using PaddedGccVec = detail::PaddedGccVec<L, T, Q, detail::BVecNeedsPadding<L, T, Q>()>;
-	
+	using GccVec = typename detail::GccVExt<L, T, Q>::GccV;
 	template <length_t L, typename T, qualifier Q>
 	using VecDataArray = detail::VecDataArray<L, T, Q, detail::BDataNeedsPadding<L, T, Q>()>;
 	
@@ -161,6 +162,7 @@ namespace glm
 			switch (i)
 			{
 				default:
+					__builtin_unreachable();
 				case 0:
 					return x;
 				case 1: {
@@ -192,6 +194,7 @@ namespace glm
 			switch (i)
 			{
 				default:
+					__builtin_unreachable();
 				case 0:
 					return x;
 				case 1: {
@@ -296,7 +299,7 @@ namespace glm
 		{
 			using VTX = decltype(vs0);
 			if constexpr ( std::is_integral_v<VTX> || std::is_floating_point_v<VTX> ) {
-				return RetArr<1>{vs0};
+				return RetArr<1>{(T)vs0};
 			} else if constexpr ( ( requires { VTX::k_len; }) ) {
 				using Tx = VTX::value_type;
 				using ArrX = VecDataArray<VTX::k_len, Tx, VTX::k_qual>;
@@ -323,7 +326,7 @@ namespace glm
 		: EC<L, T, Q>
 			{.data= [scalar...]() -> data_t
 				{
-					if (std::is_constant_evaluated()) {
+					if (std::is_constant_evaluated() || (L == 3 && !BIsAlignedQ<Q>())) {
 						DataArray a = {.p={ T(scalar)... }};
 						return std::bit_cast<data_t>(a);
 					} else {
@@ -454,7 +457,7 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & operator*=(vec<L, Tx, Q> v)
+		inline GLM_CONSTEXPR vec<L, T, Q> & operator*=(vec<L, Tx, Q> const& __restrict__ v) __restrict__
 		{
 			if constexpr (L < 3) {
 				this->data *= v.data;
@@ -788,9 +791,12 @@ namespace glm
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator*(vec<L, T, Q> v1, vec<L, T, Q>  v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((const, always_inline, nothrow, no_stack_protector)) operator*(vec<L, T, Q> v1, vec<L, T, Q> const& __restrict__ v2)
 		{
-			return vec<L, T, Q>(v1) *= v2;
+			if constexpr (L == 3 && !BIsAlignedQ<Q>())
+				return *(new (&v1) vec<L, T, Q>(v1.x*v2.x, v1.y*v2.y, v1.z*v2.z));
+			else
+				return v1 *= v2;
 		}
 
 		
@@ -813,9 +819,12 @@ namespace glm
 		}
 
 		template <length_t Lx>
-		friend inline GLM_CONSTEXPR vec<L, T, Q> operator/(vec<Lx, T, Q>  v1, vec<L, T, Q>  v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator/(vec<Lx, T, Q>  v1, vec<L, T, Q> && __restrict__ v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
-			return vec<L, T, Q>(v1.x) /= v2;
+			if constexpr (L == 3 && !BIsAlignedQ<Q>())
+				return *(new (&v2) vec<L, T, Q>( v1.data / v2.x, v1.data/v2.y, v1.data/v2.z ));
+			else
+				return vec<L, T, Q>(v1.x) /= v2;
 		}
 
 		

@@ -9,47 +9,53 @@ namespace glm::detail
 			using FirstTx = Tx0;
 		};
 		template <length_t Lx, typename Tx, qualifier Qx>
-		using PaddedVec = PaddedGccVec<Lx, Tx, Qx, detail::BVecNeedsPadding<Lx, Tx, Qx>()>;
-		using gcc_vec_t = PaddedVec<L, T, Q>::GccV;
+		using GccVec = typename detail::GccVExt<Lx, Tx, Qx>::GccV;
+		using gcc_vec_t = GccVec<L, T, Q>;
 		using data_t = typename detail::storage<L, T, detail::is_aligned<Q>::value>::type;
 		
-		static inline auto __attribute__((always_inline)) gcc_vec_to_data(PaddedVec<L, T, Q> v) {
-			if constexpr (L == 3 && !BIsAlignedQ<Q>()) {
-				data_t d;
-				std::memcpy(&d, &v, sizeof(d));
-				return d;
-			} else {
+		static inline auto __attribute__((always_inline)) gcc_vec_to_data(auto v) {
+			static constexpr auto size = std::min(sizeof(v), sizeof(data_t));
+			static constexpr auto biggerSize = std::max(sizeof(v), sizeof(data_t));
+			if constexpr (size == biggerSize) {
 				return std::bit_cast<data_t>(v);
+			} else {
+				data_t d;
+				std::memcpy(&d, &v, size);
+				return d;
 			}
 		}
 		
 		static inline auto __attribute__((always_inline)) simd_ctor_scalar(arithmetic auto scalar) {
-			PaddedVec<L, T, Q> v = {};
-			v.gcc_vec = v.gcc_vec + ( (T)scalar );
+			gcc_vec_t v = gcc_vec_t{} + ( (T)scalar );
+			using Tx = decltype(scalar);
+			scalar.Tx::~Tx();
 			return gcc_vec_to_data(v);
 		}
 		
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx == L)
 		static inline auto __attribute__((always_inline)) simd_ctor(::glm::vec<Lx, Tx, Qx> v)
 		{
-			using OtherPaddedVec = PaddedVec<Lx, Tx, Qx>;
-			OtherPaddedVec o = std::bit_cast<OtherPaddedVec>(v.data);
-			PaddedVec<L, T, Q> converted = {.gcc_vec=__builtin_convertvector(o.gcc_vec, gcc_vec_t)};
+			using OtherVec = GccVec<Lx, Tx, Qx>;
+			OtherVec o;
+			static constexpr auto size = std::min(sizeof(v.data), sizeof(o));
+			std::memcpy(&o, &(v.data), size);
+			using o_vec_t = decltype(v);
+			v.o_vec_t::~o_vec_t();
+			gcc_vec_t converted = __builtin_convertvector(o, gcc_vec_t);
 			return gcc_vec_to_data(converted);
 		}
 		
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != L && Lx < L)
 		static inline auto __attribute__((always_inline)) simd_ctor(::glm::vec<Lx, Tx, Qx> v)
 		{
-			using OtherPaddedVec = PaddedVec<Lx, Tx, Qx>;
-			using OurSizeTheirType = PaddedVec<L, Tx, Qx>;
-			OtherPaddedVec o = std::bit_cast<OtherPaddedVec>(v.data);
-			OurSizeTheirType oExpanded = {};
-			for (length_t i = 0; i < Lx; i++) {
-				oExpanded.gcc_vec[i] = o.gcc_vec[i];
-			}
+			using OurSizeTheirType = GccVec<L, Tx, Qx>;
+			static constexpr auto size = std::min(sizeof(OurSizeTheirType), sizeof(v.data));
+			OurSizeTheirType oExpanded;
+			std::memcpy(&oExpanded, &(v.data), size);
+			using o_vec_t = decltype(v);
+			v.o_vec_t::~o_vec_t();
 			
-			PaddedVec<L, T, Q> converted = {.gcc_vec=__builtin_convertvector(oExpanded.gcc_vec, gcc_vec_t)};
+			gcc_vec_t converted = __builtin_convertvector(oExpanded, gcc_vec_t);
 			return gcc_vec_to_data(converted);
 		}
 		
@@ -62,11 +68,13 @@ namespace glm::detail
 		static inline auto __attribute__((always_inline)) simd_ctor_multi_scalars(A... scalars) requires ( isLengthOfVector<A...>() && SameArithmeticTypes<A...>())
 		{
 			//assuming that number of scalars is always the same as the length of the to-be-constructed vector
-			using Tx = typename GetFirstType<A...>::FirstTx;
-			using OtherPaddedVec = PaddedVec<L, Tx, Q>;
-			typename OtherPaddedVec::GccV o = {Tx(scalars)...};
-			PaddedVec<L, T, Q> converted = {.gcc_vec=__builtin_convertvector(o, gcc_vec_t)};
-			return gcc_vec_to_data(converted);
+			gcc_vec_t v;
+			std::array<T, sizeof...(scalars)> pack{scalars...};
+			for (int i = 0; i != sizeof...(scalars); i++ ) {
+				v[i] = pack[i];
+				pack[i].T::~T();
+			}
+			return gcc_vec_to_data(v);
 		}
 	};
 }
