@@ -295,7 +295,7 @@ namespace glm
 				return 1;
 			} 
 		}
-		static inline auto ctor_mixed_constexpr_single = [](auto vs0) -> auto
+		static inline decltype(auto) ctor_mixed_constexpr_single = [](auto vs0) -> auto
 		{
 			using VTX = decltype(vs0);
 			if constexpr ( std::is_integral_v<VTX> || std::is_floating_point_v<VTX> ) {
@@ -353,16 +353,19 @@ namespace glm
 					const auto params = std::tuple{vecOrScalar...};
 					
 					const auto arr = ctor_mixed_constexpr_single(std::get<0>(params));
-					std::memcpy(aa.a.p.begin()+i, arr, sizeof(T)*lengths[0]);
+					if (arr) [[likely]]
+						std::memcpy(aa.a.p.begin()+i, arr, sizeof(T)*lengths[0]);
 					constexpr auto i2 = i + lengths[0];
 					
 					if constexpr (sizeof...(VecOrScalar) > 1) {
 						const auto arr2 = ctor_mixed_constexpr_single(std::get<1>(params));
-						std::memcpy(aa.a.p.begin()+i2, arr2, sizeof(T)*lengths[1]);
+						if (arr2) [[likely]]
+							std::memcpy(aa.a.p.begin()+i2, arr2, sizeof(T)*lengths[1]);
 						constexpr auto i3 = i2 + lengths[1];
 						if constexpr (sizeof...(VecOrScalar) > 2) {
 							const auto arr3 = ctor_mixed_constexpr_single(std::get<2>(params));
-							std::memcpy(aa.a.p.begin()+i3, arr3, sizeof(T)*lengths[2]);
+							if (arr3) [[likely]]
+								std::memcpy(aa.a.p.begin()+i3, arr3, sizeof(T)*lengths[2]);
 						}
 					}
 					
