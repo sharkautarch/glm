@@ -36,7 +36,7 @@ namespace glm
 	/// @see gtx_fast_exponential
 	template<length_t L, typename T, qualifier Q>
 	GLM_FUNC_DECL vec<L, T, Q> fastPow(vec<L, T, Q> const& x, vec<L, T, Q> const& y);
-
+	
 	/// Faster than the common pow function but less accurate.
 	/// @see gtx_fast_exponential
 	template<typename genTypeT, typename genTypeU>
