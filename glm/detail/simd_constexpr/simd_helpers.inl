@@ -45,7 +45,7 @@ namespace glm::detail
 			return gcc_vec_to_data(converted);
 		}
 		
-		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != L && Lx < L)
+		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != L)
 		static inline auto __attribute__((always_inline)) simd_ctor(::glm::vec<Lx, Tx, Qx> v)
 		{
 			using OurSizeTheirType = GccVec<L, Tx, Qx>;
@@ -58,7 +58,7 @@ namespace glm::detail
 			gcc_vec_t converted = __builtin_convertvector(oExpanded, gcc_vec_t);
 			return gcc_vec_to_data(converted);
 		}
-		
+
 		template<arithmetic... A>
 		static consteval bool isLengthOfVector() {
 			return sizeof...(A) == L;
