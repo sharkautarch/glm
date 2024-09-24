@@ -36,7 +36,7 @@ namespace glm
 #		define POLY4(x, c0, c1, c2, c3, c4) _mm_add_ps(_mm_mul_ps(POLY3(x, c1, c2, c3, c4), x), _mm_set1_ps(c0))
 #		define POLY5(x, c0, c1, c2, c3, c4, c5) _mm_add_ps(_mm_mul_ps(POLY4(x, c1, c2, c3, c4, c5), x), _mm_set1_ps(c0))
 
-		__m128 exp2f4(__m128 x)
+		static inline __m128 exp2f4(__m128 x)
 		{
 			 __m128i ipart;
 			 __m128 fpart, expipart, expfpart;
@@ -71,7 +71,7 @@ namespace glm
 
 #		define LOG_POLY_DEGREE 5
 
-		__m128 log2f4(__m128 x)
+		static inline __m128 log2f4(__m128 x)
 		{
 			 __m128i exp = _mm_set1_epi32(0x7F800000);
 			 __m128i mant = _mm_set1_epi32(0x007FFFFF);
