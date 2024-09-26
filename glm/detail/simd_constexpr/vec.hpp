@@ -16,7 +16,7 @@
 
 // NOTE: swizzle functions only return by value. 
 //	also all swizzles require you to select at least two members (ex: v.xy(); v2.yzw(); )
-include "../_swizzle_func_gcc_vec.hpp"
+#include "../_swizzle_func_gcc_vec.hpp"
 
 #include <cstddef>
 #include <array>
