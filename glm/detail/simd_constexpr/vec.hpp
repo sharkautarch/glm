@@ -4,11 +4,20 @@
 #pragma once
 
 #include "../qualifier.hpp"
-#if GLM_CONFIG_SWIZZLE == GLM_SWIZZLE_OPERATOR
-#	include "../_swizzle.hpp"
-#elif GLM_CONFIG_SWIZZLE == GLM_SWIZZLE_FUNCTION
-#	include "../_swizzle_func.hpp"
+#ifdef GLM_CONFIG_SWIZZLE
+# undef GLM_CONFIG_SWIZZLE
 #endif
+
+#define GLM_CONFIG_SWIZZLE GLM_SWIZZLE_FUNCTION
+
+//sharkautarch: IMO, the GLM swizzle 'operators' are too hacky to me, plus they actually *increase the size of the vec's*, and lastly, I wasn't confident that they'd work well here.
+//Instead, we'll just always provide swizzle *functions*, which don't bloat the binary/stack space, and also utilizes simd __builtin_shufflevector intrinsics (for *both* aligned and packed vec's). This'll make them actually be *more performant* compared to separately accessing more than one x/y/z/w(etc) member.
+//So no real reason not to simply enable swizzle functions by default!
+
+// NOTE: swizzle functions only return by value. 
+//	also all swizzles require you to select at least two members (ex: v.xy(); v2.yzw(); )
+include "../_swizzle_func_gcc_vec.hpp"
+
 #include <cstddef>
 #include <array>
 #include <variant>
@@ -28,10 +37,6 @@ namespace glm
 		return Q == aligned_highp || Q == aligned_mediump || Q == aligned_lowp;
 	}
 	
-	template <qualifier Q, qualifier Qx>
-	consteval bool BRequiresPackOrUnpack() {
-		return BIsAlignedQ<Q> ^ BIsAlignedQ<Qx>;
-	}
 	template <typename T>
 	concept arithmetic = std::integral<T> || std::floating_point<T>;
 	template <typename T0, typename... T>
@@ -73,12 +78,18 @@ namespace glm
 			using ArrT = _ArrT<L, T, Q>;
 			using data_t = _data_t<L,T,Q>;
 			ArrT p;
+			constexpr auto cbegin() const {
+				return p.cbegin();
+			}
 			std::byte padding[sizeof(data_t) - sizeof(ArrT)];
 		};
 		template <length_t L, typename T, qualifier Q>
 		struct VecDataArray<L, T, Q, false> {
 			using ArrT = _ArrT<L, T, Q>;
 			ArrT p;
+			constexpr auto cbegin() const {
+				return p.cbegin();
+			}
 		};
 		
 		template <length_t L, typename T, qualifier Q, bool NeedsPadding>
@@ -116,34 +127,30 @@ namespace glm
 #endif
 namespace glm
 {
-	
-	template <length_t L, typename T, qualifier Q>
-	struct DataWrapper { // stupid wrapper to silence a warning: https://stackoverflow.com/a/59993590
-		using data_t = detail::_data_t<L, T, Q>;
-	};
-	template <length_t L, typename T, qualifier Q>
-	using EC = detail::ElementCollection<Q, T, L>;
 	template<length_t L, typename T, qualifier Q>
-	struct GLM_TRIVIAL vec : detail::ElementCollection<Q, T, L>
+	struct GLM_TRIVIAL vec : detail::ElementCollection<L, T, Q>
 	{
 		// -- Data --
-		using detail::ElementCollection<Q, T, L>::x;
-		using detail::ElementCollection<Q, T, L>::y;
-		using detail::ElementCollection<Q, T, L>::z;
-		using detail::ElementCollection<Q, T, L>::w;
-		using detail::ElementCollection<Q, T, L>::r;
-		using detail::ElementCollection<Q, T, L>::g;
-		using detail::ElementCollection<Q, T, L>::b;
-		using detail::ElementCollection<Q, T, L>::a;
-		using detail::ElementCollection<Q, T, L>::s;
-		using detail::ElementCollection<Q, T, L>::t;
-		using detail::ElementCollection<Q, T, L>::p;
-		using detail::ElementCollection<Q, T, L>::q;
+		using EC = detail::ElementCollection<L, T, Q>;
+		using EC::x;
+		using EC::y;
+		using EC::z;
+		using EC::w;
+		using EC::r;
+		using EC::g;
+		using EC::b;
+		using EC::a;
+		using EC::s;
+		using EC::t;
+		using EC::p;
+		using EC::q;
+		using EC::data;
 
 		using SimdHlp = detail::SimdHelpers<L, T, Q>;
 		static constexpr length_t data_len = (Q == aligned && L == 3) ? 4 : L;
 		using DataArray = VecDataArray<data_len, T, Q>;
 		using data_t = typename detail::storage<L, T, detail::is_aligned<Q>::value>::type;
+		using GccVec_t = GccVec<L, T, Q>;
 
 		// -- Implementation detail --
 		typedef T value_type;
@@ -160,9 +167,9 @@ namespace glm
 		// -- Component Access --
 		static constexpr length_t length(){	return L;	}
 		
-		inline constexpr T& operator[](length_t i)
+		inline T& operator[](length_t i)
 		{
-			if (!std::is_constant_evaluated()) {
+			if (!std::is_constant_evaluated() && !__builtin_constant_p(i) ) {
 				GLM_ASSERT_LENGTH(i, L);
 			}
 			switch (i)
@@ -194,68 +201,12 @@ namespace glm
 		
 		inline constexpr T operator[](length_t i) const
 		{
-			if (!std::is_constant_evaluated()) {
+			if (!std::is_constant_evaluated() && !__builtin_constant_p(i) ) {
 				GLM_ASSERT_LENGTH(i, L);
 			}
-			switch (i)
-			{
-				default:
-					__builtin_unreachable();
-				case 0:
-					return x;
-				case 1: {
-					if constexpr (L>=2)
-						return y;
-					else
-						__builtin_unreachable();
-				}
-				case 2:{
-					if constexpr (L>=3)
-						return z;
-					else
-						__builtin_unreachable();
-				}
-				case 3:{
-					if constexpr (L>=4)
-						return w;
-					else
-						__builtin_unreachable();
-				}
-			}
+			
+			return std::bit_cast<DataArray>(data).p[i];
 		}
-		
-		
-#				if GLM_CONFIG_SWIZZLE == GLM_SWIZZLE_OPERATOR
-					GLM_SWIZZLE4_2_MEMBERS(T, Q, x, y, z, w)
-					GLM_SWIZZLE4_2_MEMBERS(T, Q, r, g, b, a)
-					GLM_SWIZZLE4_2_MEMBERS(T, Q, s, t, p, q)
-					GLM_SWIZZLE4_3_MEMBERS(T, Q, x, y, z, w)
-					GLM_SWIZZLE4_3_MEMBERS(T, Q, r, g, b, a)
-					GLM_SWIZZLE4_3_MEMBERS(T, Q, s, t, p, q)
-					GLM_SWIZZLE4_4_MEMBERS(T, Q, x, y, z, w)
-					GLM_SWIZZLE4_4_MEMBERS(T, Q, r, g, b, a)
-					GLM_SWIZZLE4_4_MEMBERS(T, Q, s, t, p, q)
-					
-					GLM_SWIZZLE3_2_MEMBERS(T, Q, x, y, z)
-					GLM_SWIZZLE3_2_MEMBERS(T, Q, r, g, b)
-					GLM_SWIZZLE3_2_MEMBERS(T, Q, s, t, p)
-					GLM_SWIZZLE3_3_MEMBERS(T, Q, x, y, z)
-					GLM_SWIZZLE3_3_MEMBERS(T, Q, r, g, b)
-					GLM_SWIZZLE3_3_MEMBERS(T, Q, s, t, p)
-					GLM_SWIZZLE3_4_MEMBERS(T, Q, x, y, z)
-					GLM_SWIZZLE3_4_MEMBERS(T, Q, r, g, b)
-					GLM_SWIZZLE3_4_MEMBERS(T, Q, s, t, p)
-					
-					GLM_SWIZZLE2_2_MEMBERS(T, Q, x, y)
-					GLM_SWIZZLE2_2_MEMBERS(T, Q, r, g)
-					GLM_SWIZZLE2_2_MEMBERS(T, Q, s, t)
-					GLM_SWIZZLE2_3_MEMBERS(T, Q, x, y)
-					GLM_SWIZZLE2_3_MEMBERS(T, Q, r, g)
-					GLM_SWIZZLE2_3_MEMBERS(T, Q, s, t)
-					GLM_SWIZZLE2_4_MEMBERS(T, Q, x, y)
-					GLM_SWIZZLE2_4_MEMBERS(T, Q, r, g)
-					GLM_SWIZZLE2_4_MEMBERS(T, Q, s, t)
-#				endif
 		
 		template <typename ScalarGetter>
 		static constexpr auto ctor_scalar(ScalarGetter scalar) {
@@ -319,19 +270,21 @@ namespace glm
 		};
 		
 		constexpr vec() = default;
-		constexpr vec(arithmetic auto scalar) : EC<L, T, Q>{.data= [scalar](){ auto s = [scalar](){ return scalar; }; return ctor_scalar(s); }() } {}
+		constexpr vec(arithmetic auto scalar) : EC{.data= [scalar](){ auto s = [scalar](){ return scalar; }; return ctor_scalar(s); }() } {}
 
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx == 1 && NotVec1<L>)
-	  constexpr vec(vec<Lx, Tx, Qx> v) : EC<L, T, Q>{.data= [d=std::bit_cast<VecDataArray<Lx, Tx, Qx>>(v.data)](){ auto s = [scalar=d.p[0]](){ return scalar; }; return ctor_scalar(s); }() } {}
+	  constexpr vec(vec<Lx, Tx, Qx> v) : EC{.data= [d=std::bit_cast<VecDataArray<Lx, Tx, Qx>>(v.data)](){ auto s = [scalar=d.p[0]](){ return scalar; }; return ctor_scalar(s); }() } {}
 		
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != 1)
-		constexpr vec(vec<Lx, Tx, Qx> v) : EC<L, T, Q>{.data= [v](){ auto vv = [v](){ return v; }; return ctor(vv); }() } {}
+		constexpr vec(vec<Lx, Tx, Qx> v) : EC{.data= [v](){ auto vv = [v](){ return v; }; return ctor(vv); }() } {}
+
+		constexpr vec(GccVec_t d) : EC{.data=std::bit_cast<data_t>(d)} {}
 		
 		//template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != 1)
-		constexpr vec(__m128 d) : EC<L, T, Q>{ .data = std::bit_cast<detail::_data_t<L, T, Q>>(d) } {}
+		//constexpr vec(__m128 d) : EC{ .data = std::bit_cast<detail::_data_t<L, T, Q>>(d) } {}
 		template <arithmetic... Scalar> requires (sizeof...(Scalar) == L)
 		constexpr vec(Scalar... scalar)
-		: EC<L, T, Q>
+		: EC
 			{.data= [scalar...]() -> data_t
 				{
 					if (std::is_constant_evaluated() || (L == 3 && !BIsAlignedQ<Q>())) {
@@ -345,7 +298,7 @@ namespace glm
 			
 		template <typename VecOrScalar0, typename... VecOrScalar> requires (sizeof...(VecOrScalar) >= 1 && NotSameArithmeticTypes<VecOrScalar0, VecOrScalar...>())
 		constexpr vec(VecOrScalar0 const&__restrict__ vecOrScalar0, VecOrScalar... vecOrScalar)
-		: EC<L, T, Q>
+		: EC
 			{.data= [vecOrScalar0, vecOrScalar...]() -> data_t
 				{
 					//type_vecx.inl never had any simd versions for ctor from mixes of scalars & vectors,
@@ -792,12 +745,9 @@ namespace glm
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((const, always_inline, nothrow, no_stack_protector)) operator*(vec<L, T, Q> v1, vec<L, T, Q> const& __restrict__ v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> operator*(vec<L, T, Q> v1, vec<L, T, Q> const& __restrict__ v2)
 		{
-			if constexpr (L == 3 && !BIsAlignedQ<Q>())
-				return *(new (&v1) vec<L, T, Q>(v1.x*v2.x, v1.y*v2.y, v1.z*v2.z));
-			else
-				return v1 *= v2;
+			return vec<L, T, Q>(v2) *= v1;
 		}
 
 		

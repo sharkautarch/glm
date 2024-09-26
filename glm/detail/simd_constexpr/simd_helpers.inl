@@ -36,13 +36,23 @@ namespace glm::detail
 		static inline auto __attribute__((always_inline)) simd_ctor(::glm::vec<Lx, Tx, Qx> v)
 		{
 			using OtherVec = GccVec<Lx, Tx, Qx>;
-			OtherVec o;
-			static constexpr auto size = std::min(sizeof(v.data), sizeof(o));
-			std::memcpy(&o, &(v.data), size);
-			using o_vec_t = decltype(v);
-			v.o_vec_t::~o_vec_t();
-			gcc_vec_t converted = __builtin_convertvector(o, gcc_vec_t);
-			return gcc_vec_to_data(converted);
+			if constexpr (!std::is_same_v<::glm::vec<Lx, Tx, Qx>, ::glm::vec<L,T,Q>>) {
+				if constexpr (	((Lx == 3 || L == 3) && (!BIsAlignedQ<Q>() || !BIsAlignedQ<Qx>())) || sizeof(v.data) != sizeof(OtherVec)  ) { 
+					OtherVec o;
+					static constexpr auto size = std::min(sizeof(v.data), sizeof(o));
+					std::memcpy(&o, &(v.data), size);
+					using o_vec_t = decltype(v);
+					v.o_vec_t::~o_vec_t();
+					gcc_vec_t converted = __builtin_convertvector(o, gcc_vec_t);
+					return gcc_vec_to_data(converted);
+				} else {
+					OtherVec o = std::bit_cast<OtherVec>(v.data);
+					gcc_vec_t converted = __builtin_convertvector(o, gcc_vec_t);
+					return gcc_vec_to_data(converted);
+				}
+			} else {
+				return v.data;
+			}
 		}
 		
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != L)

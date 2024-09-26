@@ -108,16 +108,29 @@ namespace detail
 #	endif
 
 #	if GLM_ARCH & GLM_ARCH_SSE2_BIT
-#if defined(__clang__) || defined(__GNUC__)
+#if (defined(__clang__) || defined(__GNUC__)) && (GLM_LANG_CXX20_FLAG & GLM_LANG)
 #if __x86_64__
-#define ATTR(size)  __attribute__((packed,aligned(size)))
+consteval uint32_t roundToPow2(uint32_t n) { // https://stackoverflow.com/a/466242
+		n--;
+		n |= n >> 1u;
+		n |= n >> 2u;
+		n |= n >> 4u;
+		n |= n >> 8u;
+		n |= n >> 16u;
+		n++;
+		return std::max(n, 1u);
+}
+#define ALIGNED(size) aligned(roundToPow2( (size) )),
+#define ATTR(size)  __attribute__((packed,aligned(roundToPow2( (size) ))))
 #else
 #define ATTR(size)
+#define ALIGNED(size)
 #endif
 	template<typename T>
 	struct ATTR(sizeof(T)/2) storage<2, T, false>
 	{
-		typedef T type __attribute__((aligned(sizeof(T)/2),vector_size(2*sizeof(T))));
+		using VType = std::conditional_t< std::is_same_v<T, bool>, uint8_t, T>;
+		typedef VType type __attribute__((ALIGNED(sizeof(VType)/2) vector_size(2*sizeof(VType))));
 	};
 	template<typename T>
 	struct ATTR(1) storage<1, T, false>
@@ -127,14 +140,17 @@ namespace detail
 	template<typename T>
 	struct storage<2, T, true>
 	{
-		typedef T type __attribute__((aligned(sizeof(T)),vector_size(2*sizeof(T))));
+		using VType = std::conditional_t< std::is_same_v<T, bool>, uint8_t, T>;
+		typedef VType type __attribute__((aligned(sizeof(VType)),vector_size(2*sizeof(VType))));
 	};
 	template<typename T>
 	struct storage<1, T, true>
 	{
-		typedef T type __attribute__((aligned(sizeof(T)),vector_size(sizeof(T))));
+		using VType = std::conditional_t< std::is_same_v<T, bool>, uint8_t, T>;
+		typedef VType type __attribute__((aligned(sizeof(VType)),vector_size(sizeof(VType))));
 	};
 #undef ATTR
+#undef ALIGNED
 #endif
 	template<>
 	struct storage<4, float, true>

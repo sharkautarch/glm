@@ -12,10 +12,10 @@ namespace glm::detail
 	struct GLM_TRIVIAL RowFour {
 		[[no_unique_address]] Empty w; [[no_unique_address]] Empty a; [[no_unique_address]] Empty q;
 	};
-	template <qualifier Q, typename T, length_t L>
+	template <length_t L, typename T, qualifier Q>
 	struct ElementCollection;
 	template <qualifier Q, typename T>
-	struct  GLM_TRIVIAL ElementCollection<Q, T, 4> {
+	struct  GLM_TRIVIAL ElementCollection<4, T, Q> {
 		using data_t = typename detail::storage<4, T, detail::is_aligned<Q>::value>::type;
 		union
 		{
@@ -27,11 +27,12 @@ namespace glm::detail
 				};
 				data_t data;
 		};
+					GLM_SWIZZLE_GEN_VEC_FROM_VEC4(T, Q)
 	};
 	
 
 	template <qualifier Q, typename T>
-	struct GLM_TRIVIAL ElementCollection<Q, T, 3> : RowFour {
+	struct GLM_TRIVIAL ElementCollection<3, T, Q> : RowFour {
 		using data_t = typename detail::storage<3, T, detail::is_aligned<Q>::value>::type;
 		using RowFour::w;
 		using RowFour::a;
@@ -45,9 +46,10 @@ namespace glm::detail
 				};
 				data_t data;
 		};
+					GLM_SWIZZLE_GEN_VEC_FROM_VEC3(T, Q)
 	};
 	template <qualifier Q, typename T>
-	struct GLM_TRIVIAL ElementCollection<Q, T, 2> : RowThree, RowFour {
+	struct GLM_TRIVIAL ElementCollection<2, T, Q> : RowThree, RowFour {
 		using data_t = typename detail::storage<2, T, detail::is_aligned<Q>::value>::type;
 		using RowThree::z;
 		using RowThree::b;
@@ -62,10 +64,11 @@ namespace glm::detail
 					union { T y, g, t; };
 				};
 				data_t data;
-		};
+		};				
+				GLM_SWIZZLE_GEN_VEC_FROM_VEC2(T, Q)
 	};
 	template <qualifier Q, typename T>
-	struct GLM_TRIVIAL ElementCollection<Q, T, 1> : RowTwo, RowThree, RowFour {
+	struct GLM_TRIVIAL ElementCollection<1, T, Q> : RowTwo, RowThree, RowFour {
 		using data_t = typename detail::storage<1, T, detail::is_aligned<Q>::value>::type;
 		using RowTwo::y;
 		using RowTwo::g;
