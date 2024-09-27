@@ -6,14 +6,14 @@ namespace glm
 	{
 #	if (GLM_LANG & GLM_LANG_CXX20_FLAG)
 		template <typename To, typename From>
-		constexpr To bit_cast(From const& src) noexcept
+		constexpr To GLM_ATTR_2 bit_cast(From const& src) noexcept
 		{
 			return std::bit_cast<To>(src);
 		}
 		
 #	else
 		template <typename To, typename From>
-		constexpr To bit_cast(From const& src) noexcept
+		constexpr To GLM_ATTR_2 bit_cast(From const& src) noexcept
 		{
 			To dst;
 			std::memcpy(&dst, &src, sizeof(To));
@@ -36,7 +36,16 @@ namespace glm
 #		define POLY4(x, c0, c1, c2, c3, c4) _mm_add_ps(_mm_mul_ps(POLY3(x, c1, c2, c3, c4), x), _mm_set1_ps(c0))
 #		define POLY5(x, c0, c1, c2, c3, c4, c5) _mm_add_ps(_mm_mul_ps(POLY4(x, c1, c2, c3, c4, c5), x), _mm_set1_ps(c0))
 
-		static inline __m128 exp2f4(__m128 x)
+#		define GCCV_POLY0(v, c0) decltype((v))(c0)
+#		define GCCV_POLY1(v, c0, c1) (GCCV_POLY0(v, c1))*v + GCCV_POLY0(v,c0)
+#if 0
+#		define POLY2(x, c0, c1, c2) (POLY1(v, c1, c2)) * v + (GCCV_POLY0(v, c0))
+#		define POLY3(x, c0, c1, c2, c3) _mm_add_ps(_mm_mul_ps(POLY2(x, c1, c2, c3), x), _mm_set1_ps(c0))
+#		define POLY4(x, c0, c1, c2, c3, c4) _mm_add_ps(_mm_mul_ps(POLY3(x, c1, c2, c3, c4), x), _mm_set1_ps(c0))
+#		define POLY5(x, c0, c1, c2, c3, c4, c5) _mm_add_ps(_mm_mul_ps(POLY4(x, c1, c2, c3, c4, c5), x), _mm_set1_ps(c0))
+#endif
+
+		static inline __m128 GLM_ATTR_2 exp2f4(__m128 x)
 		{
 			 __m128i ipart;
 			 __m128 fpart, expipart, expfpart;
@@ -70,8 +79,14 @@ namespace glm
 		}
 
 #		define LOG_POLY_DEGREE 5
-
-		static inline __m128 log2f4(__m128 x)
+#if 0
+		template <length_t L, qualifier Q>
+		static inline vec<L, float, Q> log2f4(vec<L, float, Q> v)
+		{
+			
+		}
+#endif
+		static inline __m128 GLM_ATTR_2 log2f4(__m128 x)
 		{
 			 __m128i exp = _mm_set1_epi32(0x7F800000);
 			 __m128i mant = _mm_set1_epi32(0x007FFFFF);
@@ -130,13 +145,13 @@ namespace glm
 	}
 	
 	template<qualifier Q>
-	GLM_FUNC_QUALIFIER vec<3, float, Q> fastPow(vec<3, float, Q> const& x, vec<3, float, Q> const& y)
+	inline GLM_FUNC_QUALIFIER vec<3, float, Q> GLM_ATTR fastPow(vec<3, float, Q> const& x, vec<3, float, Q> const& y)
 	{
 		return vec<3, float, Q>(  vec<4, float, Q>(detail::exp2f4( detail::bit_cast<__m128>(vec<4, float, Q>(y))) * detail::log2f4(detail::bit_cast<__m128>(vec<4, float, Q> (x)))) );
 	}
 	
 	template<qualifier Q>
-	GLM_FUNC_QUALIFIER vec<4, float, Q> fastPow(vec<4, float, Q> const& x, vec<4, float, Q> const& y)
+	inline GLM_FUNC_QUALIFIER vec<4, float, Q> GLM_ATTR fastPow(vec<4, float, Q> const& x, vec<4, float, Q> const& y)
 	{
 		return vec<4, float, Q>(  vec<4, float, Q>(detail::exp2f4( detail::bit_cast<__m128>(vec<4, float, Q>(y))) * detail::log2f4(detail::bit_cast<__m128>(vec<4, float, Q> (x)))) );
 	}
