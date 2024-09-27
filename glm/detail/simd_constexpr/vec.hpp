@@ -772,9 +772,6 @@ namespace glm
 		template <length_t Lx>
 		friend inline GLM_CONSTEXPR vec<L, T, Q> operator/(vec<Lx, T, Q>  v1, vec<L, T, Q> && __restrict__ v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
-			if constexpr (L == 3 && !BIsAlignedQ<Q>())
-				return *(new (&v2) vec<L, T, Q>( v1.data / v2.x, v1.data/v2.y, v1.data/v2.z ));
-			else
 				return vec<L, T, Q>(v1.x) /= v2;
 		}
 
