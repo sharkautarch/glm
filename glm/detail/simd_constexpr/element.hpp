@@ -19,6 +19,7 @@ namespace glm::detail
 		using data_t = typename detail::storage<4, T, detail::is_aligned<Q>::value>::type;
 		union
 		{
+				VecDataArray<4, T, Q> elementArr;
 				struct {
 					union { T x, r, s; }; 
 					union { T y, g, t; };
@@ -39,6 +40,8 @@ namespace glm::detail
 		using RowFour::q;
 		union
 		{
+				static constexpr length_t data_len = (Q == aligned) ? 4 : 3;
+				VecDataArray<data_len, T, Q> elementArr;
 				struct {
 					union { T x, r, s; }; 
 					union { T y, g, t; };
@@ -59,6 +62,7 @@ namespace glm::detail
 		using RowFour::q;
 		union
 		{
+				VecDataArray<2, T, Q> elementArr;
 				struct {
 					union { T x, r, s; }; 
 					union { T y, g, t; };
@@ -81,6 +85,7 @@ namespace glm::detail
 		using RowFour::q;
 		union
 		{
+				VecDataArray<1, T, Q> elementArr;
 				struct {
 					union { T x, r, s; }; 
 				};

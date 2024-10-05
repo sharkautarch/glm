@@ -167,36 +167,12 @@ namespace glm
 		// -- Component Access --
 		static constexpr length_t length(){	return L;	}
 		
-		inline T& operator[](length_t i)
+		inline constexpr T& operator[](length_t i)
 		{
 			if (!std::is_constant_evaluated() && !__builtin_constant_p(i) ) {
 				GLM_ASSERT_LENGTH(i, L);
 			}
-			switch (i)
-			{
-				default:
-					__builtin_unreachable();
-				case 0:
-					return x;
-				case 1: {
-					if constexpr (L>=2)
-						return y;
-					else
-						__builtin_unreachable();
-				}
-				case 2:{
-					if constexpr (L>=3)
-						return z;
-					else
-						__builtin_unreachable();
-				}
-				case 3:{
-					if constexpr (L>=4)
-						return w;
-					else
-						__builtin_unreachable();
-				}
-			}
+			return a[i];
 		}
 		
 		inline constexpr T operator[](length_t i) const
@@ -205,8 +181,16 @@ namespace glm
 				GLM_ASSERT_LENGTH(i, L);
 			}
 			
-			return std::bit_cast<DataArray>(data).p[i];
+			return a[i];
 		}
+		
+		template <typename Tx, typename Qx> requires(std::is_same_v<T, bool>)
+		inline vec<L, Tx, Qx> compWiseTernary(vec<L, Tx, Qx> v1, vec<L, Tx, Qx> v2) {
+			GccVec_t condMask = std::bit_cast<GccVec_t>(elementArr);
+			auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
+			auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
+			return vec<L, Tx, Qx>(std::bit_cast<detail::_data_t<L, Tx, Qx>> ((condMask ? gv1 : gv2)));
+		} 
 		
 		template <typename ScalarGetter>
 		static constexpr auto ctor_scalar(ScalarGetter scalar) {
@@ -215,9 +199,9 @@ namespace glm
 		    for (length_t i = 0; i < L; i++) {
 		    	a.p[i]=scalar();
 		    }
-		    return std::bit_cast<data_t>(a);
+		    return a;
 			} else {
-				return SimdHlp::simd_ctor_scalar(scalar());
+				return std::bit_cast<DataArray>(SimdHlp::simd_ctor_scalar(scalar()));
 			}
 		}
 		
@@ -233,9 +217,9 @@ namespace glm
 					a.p[i] = (T)ax.p[i];
 				}
 				
-				return std::bit_cast<data_t>(a);
+				return a;
 			} else {
-				return SimdHlp::simd_ctor(vecGetter());
+				return std::bit_cast<DataArray>(SimdHlp::simd_ctor(vecGetter()));
 			}
 		}
 		template <length_t len>
@@ -270,28 +254,28 @@ namespace glm
 		};
 		
 		constexpr vec() = default;
-		constexpr vec(arithmetic auto scalar) : EC{.data= [scalar](){ auto s = [scalar](){ return scalar; }; return ctor_scalar(s); }() } {}
+		constexpr vec(arithmetic auto scalar) : EC{.elementArr= [scalar](){ auto s = [scalar](){ return scalar; }; return ctor_scalar(s); }() } {}
 
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx == 1 && NotVec1<L>)
-	  constexpr vec(vec<Lx, Tx, Qx> v) : EC{.data= [d=std::bit_cast<VecDataArray<Lx, Tx, Qx>>(v.data)](){ auto s = [scalar=d.p[0]](){ return scalar; }; return ctor_scalar(s); }() } {}
+	  constexpr vec(vec<Lx, Tx, Qx> v) : EC{.elementArr= [d=std::bit_cast<VecDataArray<Lx, Tx, Qx>>(v.elementArr)](){ auto s = [scalar=d.p[0]](){ return scalar; }; return ctor_scalar(s); }() } {}
 		
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != 1)
-		constexpr vec(vec<Lx, Tx, Qx> v) : EC{.data= [v](){ auto vv = [v](){ return v; }; return ctor(vv); }() } {}
+		constexpr vec(vec<Lx, Tx, Qx> v) : EC{.elementArr= [v](){ auto vv = [v](){ return v; }; return ctor(vv); }() } {}
 
-		constexpr vec(GccVec_t d) : EC{.data=std::bit_cast<data_t>(d)} {}
+		constexpr vec(GccVec_t d) : EC{.elementArr=std::bit_cast<DataArray>(d)} {}
 		
 		//template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != 1)
 		//constexpr vec(__m128 d) : EC{ .data = std::bit_cast<detail::_data_t<L, T, Q>>(d) } {}
 		template <arithmetic... Scalar> requires (sizeof...(Scalar) == L)
 		constexpr vec(Scalar... scalar)
 		: EC
-			{.data= [scalar...]() -> data_t
+			{.elementArr= [scalar...]() -> elementArr
 				{
 					if (std::is_constant_evaluated() || (L == 3 && !BIsAlignedQ<Q>())) {
 						DataArray a = {.p={ static_cast<T>(scalar)... }};
-						return std::bit_cast<data_t>(a);
+						return a;
 					} else {
-						return SimdHlp::simd_ctor_multi_scalars(scalar...);
+						return std::bit_cast<DataArray>(SimdHlp::simd_ctor_multi_scalars(scalar...));
 					}
 				}()
 			} {}
@@ -299,7 +283,7 @@ namespace glm
 		template <typename VecOrScalar0, typename... VecOrScalar> requires (sizeof...(VecOrScalar) >= 1 && NotSameArithmeticTypes<VecOrScalar0, VecOrScalar...>())
 		constexpr vec(VecOrScalar0 const&__restrict__ vecOrScalar0, VecOrScalar... vecOrScalar)
 		: EC
-			{.data= [vecOrScalar0, vecOrScalar...]() -> data_t
+			{.elementArr= [vecOrScalar0, vecOrScalar...]() -> elementArr
 				{
 					//type_vecx.inl never had any simd versions for ctor from mixes of scalars & vectors,
 					//so I don't really need to figure out how I'd make a generic simd version for this ctor 
@@ -328,7 +312,7 @@ namespace glm
 						}
 					}
 					
-					return std::bit_cast<data_t>(destArr);
+					return destArr;
 				}()
 			} {}
 
