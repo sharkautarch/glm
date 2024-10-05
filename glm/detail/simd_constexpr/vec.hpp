@@ -184,6 +184,14 @@ namespace glm
 			return a[i];
 		}
 		
+		template <typename Tx, typename Qx> requires(std::is_same_v<T, bool>)
+		inline vec<L, Tx, Qx> compWiseTernary(vec<L, Tx, Qx> v1, vec<L, Tx, Qx> v2) {
+			GccVec_t condMask = std::bit_cast<GccVec_t>(elementArr);
+			auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
+			auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
+			return vec<L, Tx, Qx>(std::bit_cast<detail::_data_t<L, Tx, Qx>> ((condMask ? gv1 : gv2)));
+		} 
+		
 		template <typename ScalarGetter>
 		static constexpr auto ctor_scalar(ScalarGetter scalar) {
 			if (std::is_constant_evaluated()) {
