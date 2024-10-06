@@ -8,7 +8,7 @@
 		G vin; std::memcpy(&vin, &data, std::min(sizeof(data), sizeof(vin))); \
 		GccVec<2, T, Q> vout; \
 		vout = __builtin_shufflevector(vin, vin, offsetof(E, A)/sizeof(A), offsetof(E, B)/sizeof(B)); \
-		return vec<2, T, Q>(std::bit_cast<typename vec<2, T, Q>::data_t>(vout));			\
+		return vec<2, T, Q>(vout);			\
 	}
 
 #define GLM_SWIZZLE_GEN_VEC3_ENTRY(L, T, Q, CONST, A, B, C)		\
@@ -31,7 +31,7 @@
 		G vin; std::memcpy(&vin, &data, std::min(sizeof(data), sizeof(vin))); \
 		GccVec<4, T, Q> vout; \
 		vout=__builtin_shufflevector(vin, vin, offsetof(E, A)/sizeof(A), offsetof(E, B)/sizeof(B), offsetof(E, C)/sizeof(C), offsetof(E, D)/sizeof(D)); \
-		return vec<4, T, Q>(std::bit_cast<typename vec<4, T, Q>::data_t>(vout));			\
+		return vec<4, T, Q>(vout);			\
 	}
 
 #define GLM_SWIZZLE_GEN_VEC2_ENTRY_DEF(T, Q, L, CONST, A, B)	\
