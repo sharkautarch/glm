@@ -189,7 +189,7 @@ namespace glm
 			GccVec_t condMask = std::bit_cast<GccVec_t>(elementArr);
 			auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
 			auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
-			return vec<L, Tx, Qx>(std::bit_cast<detail::_data_t<L, Tx, Qx>> ((condMask ? gv1 : gv2)));
+			return vec<L, Tx, Qx>((condMask ? gv1 : gv2));
 		} 
 		
 		template <typename ScalarGetter>
