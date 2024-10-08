@@ -115,7 +115,7 @@ namespace glm
 	template <length_t L, typename T, qualifier Q>
 	using GccVec = typename detail::GccVExt<L, T, Q>::GccV;
 	template <length_t L, typename T, qualifier Q>
-	using VecDataArray = detail::VecDataArray<L, T, Q, detail::BDataNeedsPadding<L, T, Q>()>;
+	using VDataArray = detail::VecDataArray<L, T, Q, detail::BDataNeedsPadding<L, T, Q>()>;
 	static_assert(!detail::BDataNeedsPadding<3, float, (glm::qualifier)0>());
 }
 #include "element.hpp"
@@ -148,7 +148,7 @@ namespace glm
 
 		using SimdHlp = detail::SimdHelpers<L, T, Q>;
 		static constexpr length_t data_len = (Q == aligned && L == 3) ? 4 : L;
-		using DataArray = VecDataArray<data_len, T, Q>;
+		using DataArray = VDataArray<data_len, T, Q>;
 		using data_t = typename detail::storage<L, T, detail::is_aligned<Q>::value>::type;
 		using GccVec_t = GccVec<L, T, Q>;
 
@@ -184,7 +184,7 @@ namespace glm
 			return a[i];
 		}
 		
-		template <typename Tx, typename Qx> requires(std::is_same_v<T, bool>)
+		template <typename Tx, qualifier Qx> requires(std::is_same_v<T, bool>)
 		inline vec<L, Tx, Qx> compWiseTernary(vec<L, Tx, Qx> v1, vec<L, Tx, Qx> v2) {
 			GccVec_t condMask = std::bit_cast<GccVec_t>(elementArr);
 			auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
@@ -211,7 +211,7 @@ namespace glm
 				DataArray a;
 				auto v = vecGetter();
 				constexpr length_t vL = v.length();
-				using ArrX = VecDataArray<vL, typename decltype(v)::value_type, decltype(v)::k_qual>;
+				using ArrX = VDataArray<vL, typename decltype(v)::value_type, decltype(v)::k_qual>;
 				ArrX ax = std::bit_cast<ArrX>(v.data);
 				for (length_t i = 0; i < std::min(L, v.length()); i++) {
 					a.p[i] = (T)ax.p[i];
@@ -243,7 +243,7 @@ namespace glm
 				return RetArr<1>{(T)vs0};
 			} else if constexpr ( ( requires { VTX::k_len; }) ) {
 				using Tx = VTX::value_type;
-				using ArrX = VecDataArray<VTX::k_len, Tx, VTX::k_qual>;
+				using ArrX = VDataArray<VTX::k_len, Tx, VTX::k_qual>;
 				
 				ArrX ax = std::bit_cast<ArrX>(vs0.data);
 				return ax;
@@ -257,7 +257,7 @@ namespace glm
 		constexpr vec(arithmetic auto scalar) : EC{.elementArr= [scalar](){ auto s = [scalar](){ return scalar; }; return ctor_scalar(s); }() } {}
 
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx == 1 && NotVec1<L>)
-	  constexpr vec(vec<Lx, Tx, Qx> v) : EC{.elementArr= [d=std::bit_cast<VecDataArray<Lx, Tx, Qx>>(v.elementArr)](){ auto s = [scalar=d.p[0]](){ return scalar; }; return ctor_scalar(s); }() } {}
+	  constexpr vec(vec<Lx, Tx, Qx> v) : EC{.elementArr= [d=std::bit_cast<VDataArray<Lx, Tx, Qx>>(v.elementArr)](){ auto s = [scalar=d.p[0]](){ return scalar; }; return ctor_scalar(s); }() } {}
 		
 		template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != 1)
 		constexpr vec(vec<Lx, Tx, Qx> v) : EC{.elementArr= [v](){ auto vv = [v](){ return v; }; return ctor(vv); }() } {}
@@ -269,7 +269,7 @@ namespace glm
 		template <arithmetic... Scalar> requires (sizeof...(Scalar) == L)
 		constexpr vec(Scalar... scalar)
 		: EC
-			{.elementArr= [scalar...]() -> elementArr
+			{.elementArr= [scalar...]() -> DataArray
 				{
 					if (std::is_constant_evaluated() || (L == 3 && !BIsAlignedQ<Q>())) {
 						DataArray a = {.p={ static_cast<T>(scalar)... }};
@@ -283,7 +283,7 @@ namespace glm
 		template <typename VecOrScalar0, typename... VecOrScalar> requires (sizeof...(VecOrScalar) >= 1 && NotSameArithmeticTypes<VecOrScalar0, VecOrScalar...>())
 		constexpr vec(VecOrScalar0 const&__restrict__ vecOrScalar0, VecOrScalar... vecOrScalar)
 		: EC
-			{.elementArr= [vecOrScalar0, vecOrScalar...]() -> elementArr
+			{.elementArr= [vecOrScalar0, vecOrScalar...]() -> DataArray
 				{
 					//type_vecx.inl never had any simd versions for ctor from mixes of scalars & vectors,
 					//so I don't really need to figure out how I'd make a generic simd version for this ctor 
@@ -291,10 +291,10 @@ namespace glm
 					constexpr auto i = ctor_mixed_constexpr_single_get_length<VecOrScalar0>();
 
 					struct PaddedA {
-						VecDataArray<i, T, Q> a;
-						unsigned char padding[sizeof(VecDataArray<L, T, Q>) - sizeof(VecDataArray<i, T, Q>)];
+						VDataArray<i, T, Q> a;
+						unsigned char padding[sizeof(VDataArray<L, T, Q>) - sizeof(VDataArray<i, T, Q>)];
 					};
-					auto destArr = std::bit_cast<VecDataArray<L, T, Q>>(PaddedA{.a=ctor_mixed_constexpr_single(vecOrScalar0)});
+					auto destArr = std::bit_cast<VDataArray<L, T, Q>>(PaddedA{.a=ctor_mixed_constexpr_single(vecOrScalar0)});
 					constexpr std::array<length_t, sizeof...(VecOrScalar)> lengths = { ctor_mixed_constexpr_single_get_length<VecOrScalar>()...};
 					const auto params = std::tuple{vecOrScalar...};
 					
