@@ -187,10 +187,31 @@ namespace glm
 		
 		template <typename Tx, qualifier Qx> requires(std::is_same_v<T, bool>)
 		inline vec<L, Tx, Qx> compWiseTernary(vec<L, Tx, Qx> v1, vec<L, Tx, Qx> v2) {
-			GccVec_t condMask = std::bit_cast<GccVec_t>(elementArr);
-			auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
-			auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
-			return vec<L, Tx, Qx>((condMask ? gv1 : gv2));
+			if constexpr ( sizeof(Tx) == sizeof(int32_t) ) {
+				using GVec_t = typename detail::GccVExt<L, int32_t, Q>::GccV;
+				GVec_t condMask = __builtin_convertvector(std::bit_cast<GccVec_t>(elementArr), GVec_t);
+				auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
+				auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
+				return vec<L, Tx, Qx>((condMask ? gv1 : gv2));
+			} else if constexpr ( sizeof(Tx) == sizeof(int64_t) ) {
+				using GVec_t = typename detail::GccVExt<L, int64_t, Q>::GccV;
+				GVec_t condMask = __builtin_convertvector(std::bit_cast<GccVec_t>(elementArr), GVec_t);
+				auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
+				auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
+				return vec<L, Tx, Qx>((condMask ? gv1 : gv2));
+			} else if constexpr ( sizeof(Tx) == sizeof(int16_t) ) {
+				using GVec_t = typename detail::GccVExt<L, int16_t, Q>::GccV;
+				GVec_t condMask = __builtin_convertvector(std::bit_cast<GccVec_t>(elementArr), GVec_t);
+				auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
+				auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
+				return vec<L, Tx, Qx>((condMask ? gv1 : gv2));
+			} else {
+				using GVec_t = typename detail::GccVExt<L, int8_t, Q>::GccV;
+				GVec_t condMask = __builtin_convertvector(std::bit_cast<GccVec_t>(elementArr), GVec_t);
+				auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
+				auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
+				return vec<L, Tx, Qx>((condMask ? gv1 : gv2));
+			}
 		} 
 		
 		template <typename ScalarGetter>
