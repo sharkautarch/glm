@@ -1010,7 +1010,7 @@ namespace glm
 	template <length_t Lx, typename Tx, qualifier Qx> requires (std::is_same_v<Tx, bool>)
 	inline vec<Lx, bool, Qx> operator&&(vec<Lx, Tx, Qx>  v1, vec<Lx, Tx, Qx>  v2)
 	{
-		using GVec_t = typename detail::GccVExt<Lx, uint8_t, Qx>::GccV;
+		using GVec_t = typename detail::GccVExt<Lx, Tx, Qx>::GccV;
 		using VT = typename vec<Lx, Tx, Qx>::type;
 		GVec_t gv1, gv2;
 		std::memcpy(&v1, &gv1, std::min(sizeof(v1), sizeof(gv1)));
@@ -1022,7 +1022,7 @@ namespace glm
 	template <length_t Lx, typename Tx, qualifier Qx> requires (std::is_same_v<Tx, bool>)
 	inline vec<Lx, bool, Qx> operator||(vec<Lx, bool, Qx>  v1, vec<Lx, bool, Qx>  v2)
 	{
-		using GVec_t = typename detail::GccVExt<Lx, uint8_t, Qx>::GccV;
+		using GVec_t = typename detail::GccVExt<Lx, Tx, Qx>::GccV;
 		using VT = typename vec<Lx, Tx, Qx>::type;
 		GVec_t gv1, gv2;
 		std::memcpy(&v1, &gv1, std::min(sizeof(v1), sizeof(gv1)));
