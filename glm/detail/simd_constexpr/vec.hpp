@@ -459,34 +459,52 @@ namespace glm
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator++()
 		{
-			++this->x;
-			++this->y;
-			++this->z;
-			++this->w;
-			return *this;
+			constexpr T one = T(1);
+			if constexpr (L < 3) {
+				this->data += one;
+				return *this;
+			} else {
+				*this += one;
+				return *this;
+			}
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & operator--()
 		{
-			--this->x;
-			--this->y;
-			--this->z;
-			--this->w;
-			return *this;
+			constexpr T one = T(1);
+			if constexpr (L < 3) {
+				this->data -= one;
+				return *this;
+			} else {
+				*this -= one;
+				return *this;
+			}
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> operator++(int)
 		{
 			vec<L, T, Q> Result(*this);
-			++*this;
-			return Result;
+			constexpr T one = T(1);
+			if constexpr (L < 3) {
+				++*this;
+				return Result;
+			} else {
+				++*this
+				return Result;
+			}
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> operator--(int)
 		{
 			vec<L, T, Q> Result(*this);
-			--*this;
-			return Result;
+			constexpr T one = T(1);
+			if constexpr (L < 3) {
+				--*this;
+				return Result;
+			} else {
+				--*this
+				return Result;
+			}
 		}
 
 		// -- Unary bit operators --
@@ -972,32 +990,46 @@ namespace glm
 		
 		friend inline GLM_CONSTEXPR vec<L, T, Q> operator~(vec<L, T, Q>  v)
 		{
-			return detail::compute_vec_bitwise_not<4, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v);
+			return detail::compute_vec_bitwise_not<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v);
 		}
 
 		// -- Boolean operators --
 		
 		friend inline GLM_CONSTEXPR bool operator==(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
-			return detail::compute_vec_equal<4, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
+			return detail::compute_vec_equal<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
 		}
 
 		
 		friend inline GLM_CONSTEXPR bool operator!=(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
-			return detail::compute_vec_nequal<4, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
+			return detail::compute_vec_nequal<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
 		}
 	};
 	
 	template <length_t Lx, typename Tx, qualifier Qx> requires (std::is_same_v<Tx, bool>)
-	inline GLM_CONSTEXPR vec<Lx, bool, Qx> operator&&(vec<Lx, Tx, Qx>  v1, vec<Lx, Tx, Qx>  v2)
+	inline vec<Lx, bool, Qx> operator&&(vec<Lx, Tx, Qx>  v1, vec<Lx, Tx, Qx>  v2)
 	{
-		return vec<Lx, bool, Qx>(v1.x && v2.x, v1.y && v2.y, v1.z && v2.z, v1.w && v2.w);
+		using GVec_t = typename detail::GccVExt<Lx, uint8_t, Qx>::GccV;
+		using VT = typename vec<Lx, Tx, Qx>::type;
+		GVec_t gv1, gv2;
+		std::memcpy(&v1, &gv1, std::min(sizeof(v1), sizeof(gv1)));
+		std::memcpy(&v2, &gv2, std::min(sizeof(v2), sizeof(gv2)));
+		v1.VT::~VT();
+		v2.VT::~VT();
+		return vec<Lx, bool, Qx>(gv1 && gv2);
 	}
 	template <length_t Lx, typename Tx, qualifier Qx> requires (std::is_same_v<Tx, bool>)
-	inline GLM_CONSTEXPR vec<Lx, bool, Qx> operator||(vec<Lx, bool, Qx>  v1, vec<Lx, bool, Qx>  v2)
+	inline vec<Lx, bool, Qx> operator||(vec<Lx, bool, Qx>  v1, vec<Lx, bool, Qx>  v2)
 	{
-		return vec<Lx, bool, Qx>(v1.x || v2.x, v1.y || v2.y, v1.z || v2.z, v1.w || v2.w);
+		using GVec_t = typename detail::GccVExt<Lx, uint8_t, Qx>::GccV;
+		using VT = typename vec<Lx, Tx, Qx>::type;
+		GVec_t gv1, gv2;
+		std::memcpy(&v1, &gv1, std::min(sizeof(v1), sizeof(gv1)));
+		std::memcpy(&v2, &gv2, std::min(sizeof(v2), sizeof(gv2)));
+		v1.VT::~VT();
+		v2.VT::~VT();
+		return vec<Lx, bool, Qx>(gv1 || gv2);
 	}
 }
 static_assert( glm::detail::is_aligned<(glm::qualifier)0>::value == false);
