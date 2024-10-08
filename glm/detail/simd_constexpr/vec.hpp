@@ -145,6 +145,7 @@ namespace glm
 		using EC::p;
 		using EC::q;
 		using EC::data;
+		using EC::elementArr;
 
 		using SimdHlp = detail::SimdHelpers<L, T, Q>;
 		static constexpr length_t data_len = (Q == aligned && L == 3) ? 4 : L;
