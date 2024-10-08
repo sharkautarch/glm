@@ -173,7 +173,7 @@ namespace glm
 			if (!std::is_constant_evaluated() && !__builtin_constant_p(i) ) {
 				GLM_ASSERT_LENGTH(i, L);
 			}
-			return a[i];
+			return elementArr[i];
 		}
 		
 		inline constexpr T operator[](length_t i) const
@@ -182,7 +182,7 @@ namespace glm
 				GLM_ASSERT_LENGTH(i, L);
 			}
 			
-			return a[i];
+			return elementArr[i];
 		}
 		
 		template <typename Tx, qualifier Qx> requires(std::is_same_v<T, bool>)
