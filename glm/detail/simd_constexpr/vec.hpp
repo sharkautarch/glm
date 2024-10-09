@@ -489,7 +489,7 @@ namespace glm
 				++*this;
 				return Result;
 			} else {
-				++*this
+				++*this;
 				return Result;
 			}
 		}
@@ -502,7 +502,7 @@ namespace glm
 				--*this;
 				return Result;
 			} else {
-				--*this
+				--*this;
 				return Result;
 			}
 		}
