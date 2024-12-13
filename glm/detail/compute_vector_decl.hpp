@@ -51,7 +51,7 @@ namespace glm {
 		template<length_t L, typename T, qualifier Q>
 		struct compute_vec_add<L, T, Q, false>
 		{
-			GLM_FUNC_QUALIFIER GLM_CONSTEXPR static vec<L, T, Q> call(vec<L, T, Q> const& a, vec<L, T, Q> const& b)
+			GLM_FUNC_QUALIFIER GLM_CONSTEXPR static vec<L, T, Q> __attribute__((flatten)) call(vec<L, T, Q> const& a, vec<L, T, Q> const& b)
 			{
 				return detail::functor2<vec, L, T, Q>::call(std::plus<T>(), a, b);
 			}
@@ -60,7 +60,7 @@ namespace glm {
 		template<length_t L, typename T, qualifier Q>
 		struct compute_vec_sub<L, T, Q, false>
 		{
-			GLM_FUNC_QUALIFIER GLM_CONSTEXPR static vec<L, T, Q> call(vec<L, T, Q> const& a, vec<L, T, Q> const& b)
+			GLM_FUNC_QUALIFIER GLM_CONSTEXPR static vec<L, T, Q> __attribute__((flatten)) call(vec<L, T, Q> const& a, vec<L, T, Q> const& b)
 			{
 				return detail::functor2<vec, L, T, Q>::call(std::minus<T>(), a, b);
 			}
@@ -69,16 +69,19 @@ namespace glm {
 		template<length_t L, typename T, qualifier Q>
 		struct compute_vec_mul<L, T, Q, false>
 		{
-			GLM_FUNC_QUALIFIER GLM_CONSTEXPR static vec<L, T, Q> call(vec<L, T, Q> const& a, vec<L, T, Q> const& b)
+			GLM_FUNC_QUALIFIER GLM_CONSTEXPR static vec<L, T, Q> __attribute__((flatten, always_inline)) call(vec<L, T, Q> const& a, vec<L, T, Q> const& b)
 			{
-				return detail::functor2<vec, L, T, Q>::call(std::multiplies<T>(), a, b);
+				vec<L, T, Q> v;
+				for (length_t i = 0; i < L; ++i)
+					v[i] = a[i]*b[i];
+				return v;
 			}
 		};
 
 		template<length_t L, typename T, qualifier Q>
 		struct compute_vec_div<L, T, Q, false>
 		{
-			GLM_FUNC_QUALIFIER GLM_CONSTEXPR static vec<L, T, Q> call(vec<L, T, Q> const& a, vec<L, T, Q> const& b)
+			GLM_FUNC_QUALIFIER GLM_CONSTEXPR static vec<L, T, Q> __attribute__((flatten)) call(vec<L, T, Q> const& a, vec<L, T, Q> const& b)
 			{
 				return detail::functor2<vec, L, T, Q>::call(std::divides<T>(), a, b);
 			}
@@ -87,7 +90,7 @@ namespace glm {
 		template<length_t L, typename T, qualifier Q>
 		struct compute_vec_mod<L, T, Q, false>
 		{
-			GLM_FUNC_QUALIFIER GLM_CONSTEXPR static vec<L, T, Q> call(vec<L, T, Q> const& a, vec<L, T, Q> const& b)
+			GLM_FUNC_QUALIFIER GLM_CONSTEXPR static vec<L, T, Q> __attribute__((flatten)) call(vec<L, T, Q> const& a, vec<L, T, Q> const& b)
 			{
 				return detail::functor2<vec, L, T, Q>::call(std::modulus<T>(), a, b);
 			}

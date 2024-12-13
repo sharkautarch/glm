@@ -147,13 +147,13 @@ namespace glm
 	template<qualifier Q>
 	GLM_FUNC_QUALIFIER vec<3, float, Q> GLM_ATTR fastPow(vec<3, float, Q> x, vec<3, float, Q> y)
 	{
-		return vec<3, float, Q>(  vec<4, float, Q>(detail::exp2f4( detail::bit_cast<__m128>(vec<4, float, Q>(y))) * detail::log2f4(detail::bit_cast<__m128>(vec<4, float, Q> (x)))) );
+		return vec<3, float, Q>(  vec<4, float, Q>(detail::exp2f4( reinterpret_cast<__m128>((vec<4, float, Q>(y)).data)) * detail::log2f4(reinterpret_cast<__m128>((vec<4, float, Q> (x)).data))) );
 	}
 	
 	template<qualifier Q>
 	GLM_FUNC_QUALIFIER vec<4, float, Q> GLM_ATTR fastPow(vec<4, float, Q> x, vec<4, float, Q> y)
 	{
-		return vec<4, float, Q>(  vec<4, float, Q>(detail::exp2f4( detail::bit_cast<__m128>(vec<4, float, Q>(y))) * detail::log2f4(detail::bit_cast<__m128>(vec<4, float, Q> (x)))) );
+		return vec<4, float, Q>(  vec<4, float, Q>(detail::exp2f4( reinterpret_cast<__m128>((vec<4, float, Q>(y)).data)) * detail::log2f4(reinterpret_cast<__m128>((vec<4, float, Q> (x)).data))) );
 	}
 
 	template<typename T>
