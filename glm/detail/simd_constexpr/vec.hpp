@@ -238,7 +238,7 @@ namespace glm
 				for (length_t i = 0; i < std::min(L, v.length()); i++) {
 					a.p[i] = (T)ax.p[i];
 				}
-
+				
 				return EC{.elementArr=a};
 			} else {
 				return EC{.data=SimdHlp::simd_ctor(vecGetter())};
@@ -297,7 +297,7 @@ namespace glm
 						DataArray a = {.p={ static_cast<T>(scalar)... }};
 						return EC{.elementArr=a};
 					} else {
-						return EC{.data=SimdHlp::simd_ctor_multi_scalars(scalar...))};
+						return EC{.data=SimdHlp::simd_ctor_multi_scalars(scalar...)};
 					}
 				}()
 			} {}
