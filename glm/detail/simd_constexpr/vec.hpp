@@ -221,7 +221,7 @@ namespace glm
 		    for (length_t i = 0; i < L; i++) {
 		    	a.p[i]=scalar();
 		    }
-		    return EC{.elementArr=std::bit_cast<data_t>(a)};
+		    return EC{.elementArr=a};
 			} else {
 				return EC{.data=SimdHlp::simd_ctor_scalar(scalar())};
 			}
@@ -238,8 +238,8 @@ namespace glm
 				for (length_t i = 0; i < std::min(L, v.length()); i++) {
 					a.p[i] = (T)ax.p[i];
 				}
-				
-				return EC{.elementArr=std::bit_cast<data_t>(a)};
+
+				return EC{.elementArr=a};
 			} else {
 				return EC{.data=SimdHlp::simd_ctor(vecGetter())};
 			}
