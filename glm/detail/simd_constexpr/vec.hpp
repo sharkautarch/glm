@@ -1,4 +1,5 @@
 /// @ref core
+/// @defgroup simd_constexpr_vec c++20 vec implementation that supports using both constexpr constructors, and simd constructors & functions
 /// @file glm/detail/simd_constexpr/vec.hpp
 
 #pragma once
@@ -23,6 +24,7 @@
 #include <variant>
 #include <cstring>
 #include <ranges>
+#include <algorithm>
 namespace glm
 {
 #ifdef __clang__
@@ -93,8 +95,19 @@ namespace glm
 			using data_t = _data_t<L,T,Q>;
 			ArrT p;
 			constexpr auto cbegin() const {
-				return p.cbegin();
+				return std::ranges::cbegin(p);
 			}
+			constexpr auto cend() const {
+				return std::ranges::cend(p);
+			}
+			
+			constexpr auto begin() {
+				return std::ranges::begin(p);
+			}
+			constexpr auto end() {
+				return std::ranges::end(p);
+			}
+			
 			std::byte padding[sizeof(data_t) - sizeof(ArrT)];
 		};
 		template <length_t L, typename T, qualifier Q>
@@ -102,8 +115,19 @@ namespace glm
 			using ArrT = _ArrT<L, T, Q>;
 			ArrT p;
 			constexpr auto cbegin() const {
-				return p.cbegin();
+				return std::ranges::cbegin(p);
 			}
+			constexpr auto cend() const {
+				return std::ranges::cend(p);
+			}
+			
+			constexpr auto begin() {
+				return std::ranges::begin(p);
+			}
+			constexpr auto end() {
+				return std::ranges::end(p);
+			}
+			
 		};
 		
 		template <length_t L, typename T, qualifier Q, bool NeedsPadding>
@@ -198,36 +222,71 @@ namespace glm
 			
 			return elementArr.p[i];
 		}
+		/// @addtogroup simd_constexpr_vec
+		/// @{
 		
-		template <typename Tx, qualifier Qx> requires(std::is_same_v<T, bool>)
-		inline vec<L, Tx, Qx> compWiseTernary(vec<L, Tx, Qx> v1, vec<L, Tx, Qx> v2) {
-			if constexpr ( sizeof(Tx) == sizeof(int32_t) ) {
-				using GVec_t = typename detail::GccVExt<L, int32_t, Q>::GccV;
-				GVec_t condMask = __builtin_convertvector(std::bit_cast<GccVec_t>(elementArr), GVec_t);
-				auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
-				auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
-				return vec<L, Tx, Qx>((condMask ? gv1 : gv2));
-			} else if constexpr ( sizeof(Tx) == sizeof(int64_t) ) {
-				using GVec_t = typename detail::GccVExt<L, int64_t, Q>::GccV;
-				GVec_t condMask = __builtin_convertvector(std::bit_cast<GccVec_t>(elementArr), GVec_t);
-				auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
-				auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
-				return vec<L, Tx, Qx>((condMask ? gv1 : gv2));
-			} else if constexpr ( sizeof(Tx) == sizeof(int16_t) ) {
-				using GVec_t = typename detail::GccVExt<L, int16_t, Q>::GccV;
-				GVec_t condMask = __builtin_convertvector(std::bit_cast<GccVec_t>(elementArr), GVec_t);
-				auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
-				auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
-				return vec<L, Tx, Qx>((condMask ? gv1 : gv2));
+		//! Evaluates the component-wise expression: this ? v1 : v2, 
+		//! where the vector pointed to by this is the predicate vector
+		//! the predicate vector must be of an integral or boolean type,
+		//! All vectors must have the same length, 
+		//! and vector v1 and vector v2 must have the same type (the predicate vector can be a different type
+		template <typename Tx, qualifier Qx> requires(std::is_integral_v<T>)
+		inline vec<L, Tx, Qx> __attribute((pure, leaf, nothrow, no_stack_protector)) compWiseTernary(vec<L, Tx, Qx> v1, vec<L, Tx, Qx> v2) const {
+			if constexpr (L == 3 && !BIsAlignedQ<Qx>() || !BIsAlignedQ<Q>()) {
+				vec<4, T, Q> predicateWidened(*this);
+				vec<4, Tx, Qx> v1Widened(v1);
+				vec<4, Tx, Qx> v2Widened(v2);
+				return vec<3, Tx, Qx>( vec<4, Tx, Qx>( predicateWidened.data ? v1Widened.data : v2Widened.data ) );
 			} else {
-				using GVec_t = typename detail::GccVExt<L, int8_t, Q>::GccV;
-				GVec_t condMask = __builtin_convertvector(std::bit_cast<GccVec_t>(elementArr), GVec_t);
-				auto gv1 = std::bit_cast<GccVec<L, Tx, Qx>>(v1.elementArr);
-				auto gv2 = std::bit_cast<GccVec<L, Tx, Qx>>(v2.elementArr);
-				return vec<L, Tx, Qx>((condMask ? gv1 : gv2));
+				return vec<L, Tx, Qx>( this->data ? v1.data : v2.data );
+			}
+		}
+		
+		//! Evaluates the component-wise expression: this ? v1 : v2, 
+		//! where the vector pointed to by this is the predicate vector
+		//! the predicate vector must be of an integral or boolean type,
+		//! All vectors must have the same length, 
+		//! and vector v1 and vector v2 must have the same type (the predicate vector can be a different type
+		template <typename Tx, qualifier Qx> requires(std::is_integral_v<T>)
+		inline vec<L, Tx, Qx> __attribute((pure, leaf, nothrow, no_stack_protector)) compWiseTernary(vec<L, Tx, Qx> v1, vec<L, Tx, Qx> v2) {
+			if constexpr (L == 3 && !BIsAlignedQ<Qx>() || !BIsAlignedQ<Q>()) {
+				vec<4, T, Q> predicateWidened(*this);
+				vec<4, Tx, Qx> v1Widened(v1);
+				vec<4, Tx, Qx> v2Widened(v2);
+				return vec<3, Tx, Qx>( vec<4, Tx, Qx>( predicateWidened.data ? v1Widened.data : v2Widened.data ) );
+			} else {
+				return vec<L, Tx, Qx>( this->data ? v1.data : v2.data );
 			}
 		} 
+
+		//! Returns a vector created from blending two vectors together, based on the non-type template parameter boolean array mask.
+		//! Vector lhs is the vector pointed to by this, vector rhs is the second vector.
+		//! The nth false/0 element in the mask will select the nth element from the first vector.
+		//! The nth true/1 element in the mask will select the nth element from the second vector.
+		//! Vector lhs & rhs must have the same type, length & qualifier.
+		//! The returned vector has the same type, length & qualifer as vectors lhs & rhs. 
+		template <std::array<bool, L> mask>
+		inline vec<L, T, Q> __attribute((pure, leaf, nothrow, no_stack_protector)) blend(vec<L, T, Q> rhs) const {
+			if constexpr (L == 1) {
+				return vec<1, T, Q>(__builtin_shufflevector(this->data, rhs.data, mask[0]?1:0));
+			} else if constexpr (L == 2) {
+				return vec<2, T, Q>(__builtin_shufflevector(this->data, rhs.data, mask[0]?2:0, mask[1]?3:1));
+			} else if constexpr (L == 3 && BIsAlignedQ<Q>()) {
+				//aligned vec3 data is just vec4 data
+				return vec<3, T, Q>(__builtin_shufflevector(this->data, rhs.data, mask[0]?4:0, mask[1]?5:1, mask[2]?6:2, -1));
+			} else if constexpr (L == 3 && !BIsAlignedQ<Q>()) {
+				vec<4, T, Q> lhsWidened(*this);
+				vec<4, T, Q> rhsWidened(rhs);
+				return vec<3, T, Q>( vec<4, T, Q>(__builtin_shufflevector(lhsWidened.data, rhsWidened.data, mask[0]?4:0, mask[1]?5:1, mask[2]?6:2, -1)) );
+			} else if constexpr (L == 4) {
+				return vec<4, T, Q>(__builtin_shufflevector(this->data, rhs.data, mask[0]?4:0, mask[1]?5:1, mask[2]?6:2, mask[3]?7:3));
+			} else {
+				static_assert(false, "vec.blend() can only be run on a vec of length 1<=length<=4" );
+			}
+		}
 		
+		
+		/// @}
 		static constexpr auto __attribute__((always_inline,flatten)) ctor_scalar(arithmetic auto scalar) {
 			if (std::is_constant_evaluated()) {
 				DataArray a{};
@@ -245,7 +304,7 @@ namespace glm
 			if (std::is_constant_evaluated()) {
 				DataArray a;
 				using ArrX = VDataArray<Lx, Tx, Qx>;
-				ArrX ax = std::bit_cast<ArrX>(vec.data);
+				ArrX ax = std::bit_cast<ArrX>(vec.elementArr);
 				for (length_t i = 0; i < std::min(Lx, L); i++) {
 					a.p[i] = (T)ax.p[i];
 				}
@@ -297,8 +356,6 @@ namespace glm
 
 		constexpr __attribute__((always_inline)) vec(GccVec_t d) : EC{.data=reinterpret_cast<data_t>(d)} {}
 		
-		//template <length_t Lx, typename Tx, qualifier Qx> requires (Lx != 1)
-		//constexpr vec(__m128 d) : EC{ .data = std::bit_cast<detail::_data_t<L, T, Q>>(d) } {}
 		template <arithmetic... Scalar> requires (sizeof...(Scalar) == L)
 		constexpr auto __attribute__((always_inline)) ctor_multi_scalar_func(Scalar... scalar) {
 			if (std::is_constant_evaluated() || (L == 3)) {
@@ -356,7 +413,9 @@ namespace glm
 			
 		inline GLM_CONSTEXPR vec<L, T, Q>& __attribute__((always_inline)) operator+=(arithmetic auto scalar)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this += vec<L,T,Q>(scalar); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data += scalar;
@@ -372,7 +431,9 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator+=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this += vec<L,T,Q>(v); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data += v.x;
@@ -385,9 +446,15 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator+=(vec<L, Tx, Q> const& __restrict__ v)
+		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator+=(vec<L, Tx, Q> const& v)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+		  if (std::is_constant_evaluated()) {
+		  	std::array<T, L> result{};
+		  	
+		  	std::ranges::transform(this->elementArr.p, v.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> T { return lhs + rhs; });
+		  	this->elementArr.p = result;
+		  	return *this;
+		  } else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data += vec<4,T,Q>(v).data;
@@ -401,7 +468,9 @@ namespace glm
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator-=(arithmetic auto scalar)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this -= vec<L,T,Q>(scalar); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data -= vec<4,T,Q>(scalar).data;
@@ -416,7 +485,9 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator-=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this += vec<L,T,Q>(v); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data -= vec<4,T,Q>(v.x).data;
@@ -429,9 +500,15 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator-=(vec<L, Tx, Q> const& __restrict__ v)
+		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator-=(vec<L, Tx, Q> const& v)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			 if (std::is_constant_evaluated()) {
+		  	std::array<T, L> result{};
+		  	
+		  	std::ranges::transform(this->elementArr.p, v.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> T { return lhs - rhs; });
+		  	this->elementArr.p = result;
+		  	return *this;
+		  } else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data -= vec<4,T,Q>(v).data;
@@ -445,7 +522,9 @@ namespace glm
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator*=(arithmetic auto scalar)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this *= vec<L,T,Q>(scalar); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data *= vec<4,T,Q>(scalar).data;
@@ -460,7 +539,9 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator*=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this *= vec<L,T,Q>(v); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data *= vec<4,T,Q>(v.x).data;
@@ -473,9 +554,15 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator*=(vec<L, Tx, Q> const& __restrict__ v)
+		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator*=(vec<L, Tx, Q> const& v)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			 if (std::is_constant_evaluated()) {
+		  	std::array<T, L> result{};
+		  	
+		  	std::ranges::transform(this->elementArr.p, v.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> T { return lhs * rhs; });
+		  	this->elementArr.p = result;
+		  	return *this;
+		  } else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data *= vec<4,T,Q>(v).data;
@@ -489,7 +576,9 @@ namespace glm
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator/=(arithmetic auto scalar)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this /= vec<L,T,Q>(scalar); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data /= vec<4,T,Q>(scalar).data;
@@ -504,7 +593,9 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator/=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this /= vec<L,T,Q>(v); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data /= vec<4,T,Q>(v.x).data;
@@ -517,9 +608,15 @@ namespace glm
 		}
 
 		template<typename Tx>
-		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator/=(vec<L, Tx, Q> const& __restrict__ v)
+		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator/=(vec<L, Tx, Q> const& v)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			 if (std::is_constant_evaluated()) {
+		  	std::array<T, L> result{};
+		  	
+		  	std::ranges::transform(this->elementArr.p, v.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> T { return lhs + rhs; });
+		  	this->elementArr.p = result;
+		  	return *this;
+		  } else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data /= vec<4,T,Q>(v).data;
@@ -536,58 +633,40 @@ namespace glm
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator++()
 		{
 			constexpr T one = T(1);
-			if constexpr (L != 3) {
-				this->data += one;
-				return *this;
-			} else {
-				*this += one;
-				return *this;
-			}
+			*this += one;
+			return *this;
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator--()
 		{
 			constexpr T one = T(1);
-			if constexpr (L != 3) {
-				this->data -= one;
-				return *this;
-			} else {
-				*this -= one;
-				return *this;
-			}
+			*this -= one;
+			return *this;
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator++(int)
 		{
 			vec<L, T, Q> Result(*this);
 			constexpr T one = T(1);
-			if constexpr (L != 3) {
-				++*this;
-				return Result;
-			} else {
-				++*this;
-				return Result;
-			}
+			++*this;
+			return Result;
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator--(int)
 		{
 			vec<L, T, Q> Result(*this);
 			constexpr T one = T(1);
-			if constexpr (L != 3) {
-				--*this;
-				return Result;
-			} else {
-				--*this;
-				return Result;
-			}
+			--*this;
+			return Result;
 		}
 
 		// -- Unary bit operators --
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator%=(arithmetic auto scalar)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this %= vec<L,T,Q>(scalar); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data %= vec<4,T,Q>(scalar).data;
@@ -602,7 +681,9 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator%=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this %= vec<L,T,Q>(v); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data %= vec<4,T,Q>(v.x).data;
@@ -617,7 +698,13 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator%=(vec<L, Tx, Q> v)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+		  	std::array<T, L> result{};
+		  	
+		  	std::ranges::transform(this->elementArr.p, v.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> T { return lhs % rhs; });
+		  	this->elementArr.p = result;
+		  	return *this;
+		  } else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data %= vec<4,T,Q>(v).data;
@@ -631,7 +718,9 @@ namespace glm
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator&=(arithmetic auto scalar)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this &= vec<L,T,Q>(scalar); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data &= vec<4,T,Q>(scalar).data;
@@ -646,7 +735,9 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator&=(vec<1, Tx, Q> v) requires (NotVec1<L>)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this &= vec<L,T,Q>(v); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data &= vec<4,T,Q>(v.x).data;
@@ -661,7 +752,13 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator&=(vec<L, Tx, Q> v)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+		  	std::array<T, L> result{};
+		  	
+		  	std::ranges::transform(this->elementArr.p, v.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> T { return lhs & rhs; });
+		  	this->elementArr.p = result;
+		  	return *this;
+		  } else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data &= vec<4,T,Q>(v).data;
@@ -675,7 +772,9 @@ namespace glm
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator|=(arithmetic auto scalar)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this |= vec<L,T,Q>(scalar); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data |= vec<4,T,Q>(scalar).data;
@@ -690,7 +789,9 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator|=(vec<1, Tx, Q>  v) requires (NotVec1<L>)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this |= vec<L,T,Q>(v); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data |= vec<4,T,Q>(v.x).data;
@@ -705,7 +806,13 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator|=(vec<L, Tx, Q>  v)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+		  	std::array<T, L> result{};
+		  	
+		  	std::ranges::transform(this->elementArr.p, v.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> T { return lhs | rhs; });
+		  	this->elementArr.p = result;
+		  	return *this;
+		  } else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data |= vec<4,T,Q>(v).data;
@@ -719,7 +826,9 @@ namespace glm
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator^=(arithmetic auto scalar)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this ^= vec<L,T,Q>(scalar); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data ^= vec<4,T,Q>(scalar).data;
@@ -734,7 +843,9 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator^=(vec<1, Tx, Q>  v) requires (NotVec1<L>)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this ^= vec<L,T,Q>(v); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data ^= vec<4,T,Q>(v.x).data;
@@ -749,12 +860,22 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator^=(vec<L, Tx, Q>  v)
 		{
-			return (*this = detail::compute_vec_xor<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			if (std::is_constant_evaluated()) {
+		  	std::array<T, L> result{};
+		  	
+		  	std::ranges::transform(this->elementArr.p, v.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> T { return lhs ^ rhs; });
+		  	this->elementArr.p = result;
+		  	return *this;
+		  } else { 
+				return (*this = detail::compute_vec_xor<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(*this, vec<L, T, Q>(v)));
+			}
 		}
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator<<=(arithmetic auto scalar)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this <<= vec<L,T,Q>(scalar); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data <<= vec<4,T,Q>(scalar).data;
@@ -769,7 +890,9 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator<<=(vec<1, Tx, Q>  v) requires (NotVec1<L>)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this <<= vec<L,T,Q>(v); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data <<= vec<4,T,Q>(v.x).data;
@@ -784,7 +907,13 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator<<=(vec<L, Tx, Q>  v)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+		  	std::array<T, L> result{};
+		  	
+		  	std::ranges::transform(this->elementArr.p, v.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> T { return lhs << rhs; });
+		  	this->elementArr.p = result;
+		  	return *this;
+		  } else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data <<= vec<4,T,Q>(v).data;
@@ -798,7 +927,9 @@ namespace glm
 
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator>>=(arithmetic auto scalar)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this >>= vec<L,T,Q>(scalar); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data >>= vec<4,T,Q>(scalar).data;
@@ -813,7 +944,9 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator>>=(vec<1, Tx, Q>  v) requires (NotVec1<L>)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+				return *this >>= vec<L,T,Q>(v); 
+			} else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data >>= vec<4,T,Q>(v.x).data;
@@ -828,7 +961,13 @@ namespace glm
 		template<typename Tx>
 		inline GLM_CONSTEXPR vec<L, T, Q> & __attribute__((always_inline)) operator>>=(vec<L, Tx, Q>  v)
 		{
-			if constexpr (BShouldWidenVec<L,T,Q>()) {
+			if (std::is_constant_evaluated()) {
+		  	std::array<T, L> result{};
+		  	
+		  	std::ranges::transform(this->elementArr.p, v.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> T { return lhs >> rhs; });
+		  	this->elementArr.p = result;
+		  	return *this;
+		  } else if constexpr (BShouldWidenVec<L,T,Q>()) {
 				vec<4,T,Q> widened(*this);
 				
 				widened.data >>= vec<4,T,Q>(v).data;
@@ -870,15 +1009,22 @@ namespace glm
 			return vec<L, T, Q>(v) += scalar;
 		}
 
-		friend inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator+(vec<1, T, Q> v1, vec<L, T, Q>  v2)
+		/*friend inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator+(vec<1, T, Q> v1, vec<L, T, Q>  v2)
 		{
 			return vec<L, T, Q>(v2) += v1;
-		}
+		}*/
 
 		inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator+(vec<L, T, Q> v2)
 		{
 			return vec<L, T, Q>(*this) += v2;
 		}
+		
+		inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator+(vec<L, T, Q> v2) const
+		{
+			return vec<L, T, Q>(*this) += v2;
+		}
+		
+		
 
 		inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator-(T scalar)
 		{
@@ -930,7 +1076,7 @@ namespace glm
 		}
 
 		
-		friend inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator*(vec<L, T, Q> v1, vec<L, T, Q> const& __restrict__ v2)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator*(vec<L, T, Q> v1, vec<L, T, Q> const& v2)
 		{
 			return vec<L, T, Q>(v2) *= v1;
 		}
@@ -955,7 +1101,7 @@ namespace glm
 		}
 
 		template <length_t Lx>
-		friend inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator/(vec<Lx, T, Q>  v1, vec<L, T, Q> && __restrict__ v2) requires (!NotVec1<Lx> && NotVec1<L>)
+		friend inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator/(vec<Lx, T, Q>  v1, vec<L, T, Q> v2) requires (!NotVec1<Lx> && NotVec1<L>)
 		{
 				return vec<L, T, Q>(v1.x) /= v2;
 		}
@@ -1151,46 +1297,84 @@ namespace glm
 		
 		friend inline GLM_CONSTEXPR vec<L, T, Q> __attribute__((always_inline)) operator~(vec<L, T, Q>  v)
 		{
-			return detail::compute_vec_bitwise_not<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v);
+			if (std::is_constant_evaluated()) {
+				std::array<T, L> result{};
+		  	std::ranges::transform(v.elementArr.p, result.begin(), [](auto const& lhs) -> T { return ~lhs; });
+		  	vec<L, T, Q> ret{T(0)};
+		  	ret.elementArr.p = result; 
+		  	return ret;
+			} else {
+				return detail::compute_vec_bitwise_not<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v);
+			}
 		}
 
 		// -- Boolean operators --
 		
 		friend inline GLM_CONSTEXPR bool __attribute__((always_inline)) operator==(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
-			return detail::compute_vec_equal<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
+			if (std::is_constant_evaluated()) {
+				std::array<bool, L> result{};
+		  	std::ranges::transform(v1.elementArr.p, v2.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> bool { return lhs == rhs; });
+		  	return std::ranges::all_of(result);
+			} else {
+				return detail::compute_vec_equal<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
+			}
 		}
 
 		
 		friend inline GLM_CONSTEXPR bool __attribute__((always_inline)) operator!=(vec<L, T, Q>  v1, vec<L, T, Q>  v2)
 		{
-			return detail::compute_vec_nequal<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
+			if (std::is_constant_evaluated()) {
+				std::array<bool, L> result{};
+		  	std::ranges::transform(v1.elementArr.p, v2.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> bool { return lhs != rhs; });
+		  	return std::ranges::any_of(result);
+			} else {
+				return detail::compute_vec_nequal<L, T, Q, detail::is_int<T>::value, sizeof(T) * 8, detail::is_aligned<Q>::value>::call(v1, v2);
+			}
 		}
 	};
 	
 	template <length_t Lx, typename Tx, qualifier Qx> requires (std::is_same_v<Tx, bool>)
 	inline vec<Lx, bool, Qx> __attribute__((always_inline)) operator&&(vec<Lx, Tx, Qx>  v1, vec<Lx, Tx, Qx>  v2)
 	{
-		using GVec_t = typename detail::GccVExt<Lx, Tx, Qx>::GccV;
-		using VT = typename vec<Lx, Tx, Qx>::type;
-		GVec_t gv1, gv2;
-		std::memcpy(&v1, &gv1, std::min(sizeof(v1), sizeof(gv1)));
-		std::memcpy(&v2, &gv2, std::min(sizeof(v2), sizeof(gv2)));
-		v1.VT::~VT();
-		v2.VT::~VT();
-		return vec<Lx, bool, Qx>(gv1 && gv2);
+		if (std::is_constant_evaluated()) {
+	  	std::array<bool, Lx> result{};
+	  	
+	  	std::ranges::transform(v1.elementArr.p, v2.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> Tx { return lhs && rhs; });
+	  	vec<Lx, bool, Qx> ret{false};
+	  	ret.elementArr.p = result;
+	  	return ret;
+		} else {
+			using GVec_t = typename detail::GccVExt<Lx, Tx, Qx>::GccV;
+			using VT = typename vec<Lx, Tx, Qx>::type;
+			GVec_t gv1, gv2;
+			std::memcpy(&v1, &gv1, std::min(sizeof(v1), sizeof(gv1)));
+			std::memcpy(&v2, &gv2, std::min(sizeof(v2), sizeof(gv2)));
+			v1.VT::~VT();
+			v2.VT::~VT();
+			return vec<Lx, bool, Qx>(gv1 && gv2);
+		}
 	}
 	template <length_t Lx, typename Tx, qualifier Qx> requires (std::is_same_v<Tx, bool>)
 	inline vec<Lx, bool, Qx> __attribute__((always_inline)) operator||(vec<Lx, bool, Qx>  v1, vec<Lx, bool, Qx>  v2)
 	{
-		using GVec_t = typename detail::GccVExt<Lx, Tx, Qx>::GccV;
-		using VT = typename vec<Lx, Tx, Qx>::type;
-		GVec_t gv1, gv2;
-		std::memcpy(&v1, &gv1, std::min(sizeof(v1), sizeof(gv1)));
-		std::memcpy(&v2, &gv2, std::min(sizeof(v2), sizeof(gv2)));
-		v1.VT::~VT();
-		v2.VT::~VT();
-		return vec<Lx, bool, Qx>(gv1 || gv2);
+		if (std::is_constant_evaluated()) {
+	  	std::array<bool, Lx> result{};
+	  	
+	  	std::ranges::transform(v1.elementArr.p, v2.elementArr.p, result.begin(), [](auto const& lhs, auto const& rhs) -> Tx { return lhs || rhs; });
+	  	vec<Lx, bool, Qx> ret{false};
+	  	ret.elementArr.p = result;
+	  	return ret;
+		} else {
+			using GVec_t = typename detail::GccVExt<Lx, Tx, Qx>::GccV;
+			using VT = typename vec<Lx, Tx, Qx>::type;
+			GVec_t gv1, gv2;
+			std::memcpy(&v1, &gv1, std::min(sizeof(v1), sizeof(gv1)));
+			std::memcpy(&v2, &gv2, std::min(sizeof(v2), sizeof(gv2)));
+			v1.VT::~VT();
+			v2.VT::~VT();
+			return vec<Lx, bool, Qx>(gv1 || gv2);
+		}
 	}
 }
 static_assert( glm::detail::is_aligned<(glm::qualifier)0>::value == false);
